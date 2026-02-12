@@ -1,37 +1,65 @@
 import { join } from "node:path";
 import { Glob } from "bun";
-import rehypeStringify from "rehype-stringify";
-import remarkExtractFrontmatter from "remark-extract-frontmatter";
-import remarkFrontmatter from "remark-frontmatter";
-import remarkParse from "remark-parse";
-import remarkRehype from "remark-rehype";
-import { unified } from "unified";
-import { parse as parseYaml } from "yaml";
 import type { ContentEntry } from "./types";
 
 let _contentDir = "";
 
 const MD_EXTENSION_REGEX = /\.md$/;
+const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+const UTF8_BOM = "\uFEFF";
 
 export function setContentDir(dir: string) {
   _contentDir = dir;
 }
 
-const processor = unified()
-  .use(remarkParse)
-  .use(remarkFrontmatter, ["yaml"])
-  .use(remarkExtractFrontmatter, { yaml: parseYaml })
-  .use(remarkRehype)
-  .use(rehypeStringify);
+function normalizeFrontmatter(
+  value: unknown,
+  filePath: string
+): Record<string, unknown> {
+  if (value === null || value === undefined) {
+    return {};
+  }
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(
+      `YAML frontmatter in ${filePath} must parse to an object, got ${typeof value}`
+    );
+  }
+  return value as Record<string, unknown>;
+}
+
+function splitFrontmatter(
+  raw: string,
+  filePath: string
+): { frontmatter: Record<string, unknown>; markdown: string } {
+  const text = raw.startsWith(UTF8_BOM) ? raw.slice(1) : raw;
+  const match = text.match(FRONTMATTER_REGEX);
+  if (!match) {
+    return { frontmatter: {}, markdown: text };
+  }
+
+  const yamlBlock = match[1];
+  let parsed: unknown;
+  try {
+    parsed = Bun.YAML.parse(yamlBlock);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid YAML frontmatter in ${filePath}: ${message}`);
+  }
+
+  return {
+    frontmatter: normalizeFrontmatter(parsed, filePath),
+    markdown: text.slice(match[0].length),
+  };
+}
 
 async function parseMarkdown(
   filePath: string
 ): Promise<{ frontmatter: Record<string, unknown>; html: string }> {
   const raw = await Bun.file(filePath).text();
-  const result = await processor.process(raw);
+  const { frontmatter, markdown } = splitFrontmatter(raw, filePath);
   return {
-    frontmatter: (result.data as Record<string, unknown>) ?? {},
-    html: String(result),
+    frontmatter,
+    html: Bun.markdown.html(markdown),
   };
 }
 
