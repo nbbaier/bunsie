@@ -3,8 +3,6 @@ title: Hello World
 date: 2024-01-01
 ---
 
-# Hello World
-
 This is the **first** blog post built with bunsie.
 
 - Fast builds with Bun
