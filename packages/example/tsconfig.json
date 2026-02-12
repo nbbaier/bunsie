@@ -1,4 +1,7 @@
 {
-	"extends": "../../tsconfig.json",
-	"include": ["pages", "layouts", "ssg.config.ts"]
+  "extends": "../../tsconfig.json",
+  "include": ["pages", "layouts", "ssg.config.ts"],
+  "compilerOptions": {
+    "strictNullChecks": true
+  }
 }

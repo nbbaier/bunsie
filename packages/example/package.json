@@ -1,14 +1,14 @@
 {
-	"name": "example",
-	"version": "0.1.0",
-	"private": true,
-	"type": "module",
-	"scripts": {
-		"build": "bun run ../bunsie/src/cli.ts build",
-		"dev": "bun run ../bunsie/src/cli.ts dev"
-	},
-	"dependencies": {
-		"bunsie": "workspace:*",
-		"@kitajs/html": "^4"
-	}
+  "name": "example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun run ../bunsie/src/cli.ts build",
+    "dev": "bun run ../bunsie/src/cli.ts dev"
+  },
+  "dependencies": {
+    "bunsie": "workspace:*",
+    "@kitajs/html": "^4"
+  }
 }

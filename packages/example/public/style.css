@@ -1,69 +1,69 @@
 * {
-	margin: 0;
-	padding: 0;
-	box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-	font-family: system-ui, -apple-system, sans-serif;
-	line-height: 1.6;
-	max-width: 720px;
-	margin: 0 auto;
-	padding: 2rem;
-	color: #1a1a1a;
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: #1a1a1a;
 }
 
 nav {
-	display: flex;
-	gap: 1rem;
-	padding-bottom: 1rem;
-	margin-bottom: 2rem;
-	border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 nav a {
-	color: #0066cc;
-	text-decoration: none;
+  color: #0066cc;
+  text-decoration: none;
 }
 
 nav a:hover {
-	text-decoration: underline;
+  text-decoration: underline;
 }
 
 h1 {
-	margin-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 article time {
-	color: #666;
-	display: block;
-	margin-bottom: 1rem;
+  color: #666;
+  display: block;
+  margin-bottom: 1rem;
 }
 
 article h1 {
-	margin-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 blockquote {
-	border-left: 3px solid #ddd;
-	padding-left: 1rem;
-	color: #555;
-	margin: 1rem 0;
+  border-left: 3px solid #ddd;
+  padding-left: 1rem;
+  color: #555;
+  margin: 1rem 0;
 }
 
 code {
-	background: #f4f4f4;
-	padding: 0.15rem 0.3rem;
-	border-radius: 3px;
-	font-size: 0.9em;
+  background: #f4f4f4;
+  padding: 0.15rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.9em;
 }
 
 p {
-	margin-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 ul,
 ol {
-	margin-bottom: 0.75rem;
-	padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
 }
