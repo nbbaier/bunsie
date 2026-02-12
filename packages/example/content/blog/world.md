@@ -1,7 +1,6 @@
 ---
-title: Exploring the World
-date: 2024-01-15
-navOrder: 3
+title: Exploring the World of JavaScript
+date: 2024-01-18
 ---
 
 Another post demonstrating the markdown pipeline.

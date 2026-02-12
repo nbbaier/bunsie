@@ -1,25 +1,29 @@
-import { getRoutes, type RouteInfo } from "bunsie";
-
-const LEADING_SLASH_REGEX = /^\//;
+import {
+  getRoutes,
+  isIndexRoute,
+  isTopLevelRoute,
+  LEADING_SLASH_REGEX,
+  type RouteInfo,
+} from "bunsie";
 
 function routeToLabel(route: RouteInfo): string {
-  if (route.url === "/") {
-    return "Home";
-  }
-  if (!route.params.slug) {
-    return route.url.replace(LEADING_SLASH_REGEX, "");
-  }
-  return route.params.slug;
+  return isIndexRoute(route)
+    ? "Home"
+    : route.url.replace(LEADING_SLASH_REGEX, "");
 }
 
 export default function DefaultLayout({ children }: { children: string }) {
-  const routes = getRoutes().sort((a, b) => {
-    const aOrder = a.frontmatter ? a.frontmatter.navOrder : 0;
-    const bOrder = b.frontmatter ? b.frontmatter.navOrder : 0;
-    return (aOrder as number) - (bOrder as number);
-  });
-
-  console.log(routes);
+  const routes = getRoutes()
+    .filter(isTopLevelRoute)
+    .sort((a, b) => {
+      if (a.url === "/") {
+        return -1;
+      }
+      if (b.url === "/") {
+        return 1;
+      }
+      return a.url.localeCompare(b.url);
+    });
 
   return (
     <html lang="en">

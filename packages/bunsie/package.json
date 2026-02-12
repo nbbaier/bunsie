@@ -4,9 +4,16 @@
   "type": "module",
   "main": "src/index.ts",
   "bin": {
-    "bunsie": "src/cli.ts"
+    "bunsie": "dist/cli.mjs"
+  },
+  "scripts": {
+    "build": "bun run build:cli",
+    "build:cli": "tsdown src/cli.ts --format esm --platform node --external bun --out-dir dist --clean && chmod +x dist/cli.mjs"
   },
   "dependencies": {
     "@kitajs/html": "^4"
+  },
+  "devDependencies": {
+    "tsdown": "^0.20.3"
   }
 }
