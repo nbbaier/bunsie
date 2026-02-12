@@ -17,7 +17,7 @@ export default function BlogPost(props: {
 	return (
 		<article>
 			<h1>{String(props.frontmatter.title ?? props.params.slug)}</h1>
-			{props.frontmatter.date && <time>{String(props.frontmatter.date)}</time>}
+			{props.frontmatter.date ? <time>{String(props.frontmatter.date)}</time> : ""}
 			<div>{props.html}</div>
 		</article>
 	);

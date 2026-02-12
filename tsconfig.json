@@ -13,8 +13,7 @@
 		"declarationMap": true,
 		"sourceMap": true,
 		"outDir": "./dist",
-		"rootDir": ".",
-		"types": ["@kitajs/html/htmx"]
+		"rootDir": "."
 	},
 	"exclude": ["node_modules", "dist"]
 }
