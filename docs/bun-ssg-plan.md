@@ -32,31 +32,32 @@ project/
 - Scan `content/` directory recursively
 - Parse `.md` files: extract YAML frontmatter with `gray-matter`, render body to HTML with `marked`
 - Return typed content collections keyed by directory name:
-  ```ts
-  getCollection("blog") → [{ slug, frontmatter, html }]
-  getEntry("blog", "hello") → { slug, frontmatter, html }
-  ```
+   ```ts
+   getCollection("blog") → [{ slug, frontmatter, html }]
+   getEntry("blog", "hello") → { slug, frontmatter, html }
+   ```
 
 ### 2. Router (`src/router.ts`)
 
 - Scan `pages/` directory recursively
 - Map files to routes:
-  - `pages/index.tsx` → `/`
-  - `pages/about.tsx` → `/about`
-  - `pages/blog/[slug].tsx` → one route per content entry
+   - `pages/index.tsx` → `/`
+   - `pages/about.tsx` → `/about`
+   - `pages/blog/[slug].tsx` → one route per content entry
 - Each page module exports:
-  ```tsx
-  // Required: the page component
-  export default function Page({ params, content }) { ... }
 
-  // Optional: for dynamic routes like [slug].tsx
-  export function getStaticPaths() {
-    return getCollection("blog").map(post => ({
-      params: { slug: post.slug },
-      props: { post }
-    }))
-  }
-  ```
+   ```tsx
+   // Required: the page component
+   export default function Page({ params, content }) { ... }
+
+   // Optional: for dynamic routes like [slug].tsx
+   export function getStaticPaths() {
+     return getCollection("blog").map(post => ({
+       params: { slug: post.slug },
+       props: { post }
+     }))
+   }
+   ```
 
 ### 3. Renderer (`src/render.ts`)
 
@@ -98,11 +99,11 @@ bun-ssg new <name>     # Scaffold a new project (stretch goal)
 
 Minimal — lean on Bun builtins where possible:
 
-| Dep | Purpose |
-|-----|---------|
+| Dep                   | Purpose                                |
+| --------------------- | -------------------------------------- |
 | `react` + `react-dom` | JSX rendering (`renderToStaticMarkup`) |
-| `gray-matter` | Frontmatter parsing |
-| `marked` | Markdown → HTML |
+| `gray-matter`         | Frontmatter parsing                    |
+| `marked`              | Markdown → HTML                        |
 
 No bundler needed for the SSG itself — Bun runs TypeScript/JSX natively. `Bun.build()` is only used for optional client-side asset bundling.
 
@@ -110,12 +111,12 @@ No bundler needed for the SSG itself — Bun runs TypeScript/JSX natively. `Bun.
 
 ```ts
 export default {
-  contentDir: "content",
-  pagesDir: "pages",
-  layoutsDir: "layouts",
-  outDir: "dist",
-  publicDir: "public",
-}
+   contentDir: "content",
+   pagesDir: "pages",
+   layoutsDir: "layouts",
+   outDir: "dist",
+   publicDir: "public",
+};
 ```
 
 Sensible defaults for everything — config file is optional.

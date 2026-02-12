@@ -42,6 +42,12 @@ export interface ResolvedRoute {
 	outputPath: string;
 }
 
+export interface RouteInfo {
+	url: string;
+	params: Record<string, string>;
+	frontmatter?: Record<string, unknown>;
+}
+
 export interface LayoutModule {
 	default: (props: { children: string }) => string;
 }

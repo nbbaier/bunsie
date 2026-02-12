@@ -1,6 +1,25 @@
 import { join } from "node:path";
 import { Glob } from "bun";
-import type { PageModule, ResolvedRoute, Route } from "./types";
+import type { PageModule, ResolvedRoute, Route, RouteInfo } from "./types";
+
+let _routes: RouteInfo[] = [];
+
+export function setRoutes(resolved: ResolvedRoute[]) {
+	_routes = resolved.map((r) => {
+		let url = r.route.urlPattern;
+		for (const [key, value] of Object.entries(r.params)) {
+			url = url.replace(`[${key}]`, value);
+		}
+		const frontmatter = r.props.frontmatter as
+			| Record<string, unknown>
+			| undefined;
+		return { url, params: r.params, frontmatter };
+	});
+}
+
+export function getRoutes(): RouteInfo[] {
+	return _routes;
+}
 
 export async function scanRoutes(pagesDir: string): Promise<Route[]> {
 	const glob = new Glob("**/*.tsx");

@@ -51,12 +51,12 @@ Pages are `.tsx` files in the `pages/` directory. Export a default function that
 
 ```tsx
 export default function About() {
-  return (
-    <div>
-      <h1>About</h1>
-      <p>This is a static page.</p>
-    </div>
-  );
+   return (
+      <div>
+         <h1>About</h1>
+         <p>This is a static page.</p>
+      </div>
+   );
 }
 ```
 
@@ -69,20 +69,24 @@ import { getCollection } from "bunsie";
 import type { StaticPath } from "bunsie";
 
 export async function getStaticPaths(): Promise<StaticPath[]> {
-  const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { title: post.frontmatter.title, html: post.html },
-  }));
+   const posts = await getCollection("blog");
+   return posts.map((post) => ({
+      params: { slug: post.slug },
+      props: { title: post.frontmatter.title, html: post.html },
+   }));
 }
 
-export default function BlogPost(props: { params: { slug: string }; title: string; html: string }) {
-  return (
-    <article>
-      <h1>{props.title}</h1>
-      <div>{props.html}</div>
-    </article>
-  );
+export default function BlogPost(props: {
+   params: { slug: string };
+   title: string;
+   html: string;
+}) {
+   return (
+      <article>
+         <h1>{props.title}</h1>
+         <div>{props.html}</div>
+      </article>
+   );
 }
 ```
 
@@ -109,15 +113,15 @@ Layouts in `layouts/` wrap page content. The `default.tsx` layout is used automa
 
 ```tsx
 export default function DefaultLayout({ children }: { children: string }) {
-  return (
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <title>My Site</title>
-      </head>
-      <body>{children}</body>
-    </html>
-  );
+   return (
+      <html lang="en">
+         <head>
+            <meta charset="UTF-8" />
+            <title>My Site</title>
+         </head>
+         <body>{children}</body>
+      </html>
+   );
 }
 ```
 
@@ -129,11 +133,11 @@ Create `ssg.config.ts` in your project root to override defaults:
 import type { SsgConfig } from "bunsie";
 
 export default {
-  pagesDir: "pages",
-  contentDir: "content",
-  layoutsDir: "layouts",
-  publicDir: "public",
-  outDir: "dist",
+   pagesDir: "pages",
+   contentDir: "content",
+   layoutsDir: "layouts",
+   publicDir: "public",
+   outDir: "dist",
 } satisfies Partial<SsgConfig>;
 ```
 

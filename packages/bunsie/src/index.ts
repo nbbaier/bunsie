@@ -4,7 +4,7 @@ export { loadConfig } from "./config";
 export { getCollection, getEntry, setContentDir } from "./content";
 export { dev } from "./dev";
 export { renderRoute } from "./render";
-export { resolveRoutes, scanRoutes } from "./router";
+export { getRoutes, resolveRoutes, scanRoutes } from "./router";
 export type {
 	ContentEntry,
 	LayoutModule,
@@ -12,6 +12,7 @@ export type {
 	ResolvedConfig,
 	ResolvedRoute,
 	Route,
+	RouteInfo,
 	SsgConfig,
 	StaticPath,
 } from "./types";

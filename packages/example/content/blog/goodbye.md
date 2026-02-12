@@ -1,7 +1,7 @@
 ---
 title: Exploring the World
 date: 2024-01-15
-navOrder: 3
+navOrder: 2
 ---
 
 Another post demonstrating the markdown pipeline.

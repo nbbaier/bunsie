@@ -2,7 +2,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { setContentDir } from "./content";
 import { clearLayoutCache, renderRoute } from "./render";
-import { resolveRoutes, scanRoutes } from "./router";
+import { resolveRoutes, scanRoutes, setRoutes } from "./router";
 import type { ResolvedConfig } from "./types";
 
 export async function build(config: ResolvedConfig) {
@@ -27,6 +27,7 @@ export async function build(config: ResolvedConfig) {
 	// Scan and resolve routes
 	const routes = await scanRoutes(config.pagesDir);
 	const resolved = await resolveRoutes(routes);
+	setRoutes(resolved);
 
 	// Render each route and write output
 	let count = 0;
