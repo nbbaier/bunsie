@@ -1,98 +1,72 @@
 # bunsie
 
-A minimal, convention-based static site generator powered by [Bun](https://bun.sh).
-
-Uses [@kitajs/html](https://github.com/kitajs/html) for JSX-to-string rendering and [unified](https://unifiedjs.com)/remark/rehype for markdown processing.
+A minimal, convention-based static site generator powered by [Bun](https://bun.sh). Write pages as TSX components, author content in Markdown, and build blazing-fast static sites with zero configuration.
 
 ## Features
 
-- File-based routing with dynamic `[param]` segments
-- Markdown content with YAML frontmatter
-- JSX layouts and page components (no virtual DOM — compiles to strings)
-- Dev server with WebSocket live reload
-- Fast builds via Bun
+- 📄 **File-based routing** — `pages/` directory maps directly to URLs
+- 🔀 **Dynamic routes** — `[param]` patterns with `getStaticPaths()`
+- ✍️ **Markdown content** — YAML frontmatter + unified/remark/rehype pipeline
+- 🧱 **Layouts** — Reusable HTML shells for consistent page structure
+- 🔄 **Live reload** — Dev server with WebSocket-based hot refresh
+- ⚡ **Fast builds** — Leverages Bun's native speed for builds and file I/O
+- 🛠️ **Zero config** — Sensible defaults, optional `ssg.config.ts` for customization
+
+## Installation
+
+```bash
+bun add bunsie
+```
+
+## Quick Start
+
+```bash
+# Start the dev server with live reload
+bunsie dev
+
+# Build for production
+bunsie build
+```
 
 ## Project Structure
 
 ```
 your-site/
-├── ssg.config.ts          # Optional config overrides
+├── ssg.config.ts          # Optional configuration
 ├── layouts/
-│   └── default.tsx        # HTML shell wrapping all pages
+│   └── default.tsx        # HTML shell wrapping page content
 ├── pages/
 │   ├── index.tsx          # → /
 │   ├── about.tsx          # → /about
-│   └── blog/[slug].tsx    # → /blog/:slug (dynamic)
+│   └── blog/[slug].tsx    # → /blog/:slug (dynamic route)
 ├── content/
 │   └── blog/
 │       ├── hello.md       # Markdown with frontmatter
 │       └── world.md
 └── public/
-    └── style.css          # Copied to dist/ as-is
+    └── style.css          # Static assets (copied to output as-is)
 ```
 
-## Getting Started
+## Usage
 
-```bash
-# Install dependencies
-bun install
+### Static Pages
 
-# Build the example site
-cd packages/example
-bun run build
-
-# Start the dev server with live reload
-bun run dev
-```
-
-## Pages
-
-Pages are `.tsx` files in the `pages/` directory. Export a default function that returns JSX:
+Create TSX components in the `pages/` directory. Each file becomes a route:
 
 ```tsx
-export default function About() {
-   return (
-      <div>
-         <h1>About</h1>
-         <p>This is a static page.</p>
-      </div>
-   );
+// pages/index.tsx → /
+export default function Home() {
+  return (
+    <div>
+      <h1>Hello World</h1>
+    </div>
+  );
 }
 ```
 
-## Dynamic Routes
+### Markdown Content
 
-Use `[param]` in filenames and export `getStaticPaths()`:
-
-```tsx
-import { getCollection } from "bunsie";
-import type { StaticPath } from "bunsie";
-
-export async function getStaticPaths(): Promise<StaticPath[]> {
-   const posts = await getCollection("blog");
-   return posts.map((post) => ({
-      params: { slug: post.slug },
-      props: { title: post.frontmatter.title, html: post.html },
-   }));
-}
-
-export default function BlogPost(props: {
-   params: { slug: string };
-   title: string;
-   html: string;
-}) {
-   return (
-      <article>
-         <h1>{props.title}</h1>
-         <div>{props.html}</div>
-      </article>
-   );
-}
-```
-
-## Content
-
-Markdown files in `content/` are parsed with frontmatter support:
+Add Markdown files with YAML frontmatter to the `content/` directory:
 
 ```markdown
 ---
@@ -105,27 +79,72 @@ date: 2024-01-01
 This is a blog post.
 ```
 
-Access content in pages via `getCollection(name)` or `getEntry(name, slug)`.
+### Dynamic Routes
 
-## Layouts
-
-Layouts in `layouts/` wrap page content. The `default.tsx` layout is used automatically:
+Use `[param]` syntax in filenames and export `getStaticPaths()` to generate pages from content:
 
 ```tsx
-export default function DefaultLayout({ children }: { children: string }) {
-   return (
-      <html lang="en">
-         <head>
-            <meta charset="UTF-8" />
-            <title>My Site</title>
-         </head>
-         <body>{children}</body>
-      </html>
-   );
+// pages/blog/[slug].tsx
+import { getCollection } from "bunsie";
+import type { StaticPath } from "bunsie";
+
+export async function getStaticPaths(): Promise<StaticPath[]> {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { title: post.frontmatter.title, html: post.html },
+  }));
+}
+
+export default function BlogPost(props: {
+  params: { slug: string };
+  title: string;
+  html: string;
+}) {
+  return (
+    <article>
+      <h1>{props.title}</h1>
+      <div>{props.html}</div>
+    </article>
+  );
 }
 ```
 
-## Config
+### Layouts
+
+Define reusable HTML shells in the `layouts/` directory. Pages are wrapped in the default layout automatically:
+
+```tsx
+// layouts/default.tsx
+export default function DefaultLayout({ children }: { children: string }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <title>My Site</title>
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### Content API
+
+Bunsie provides helpers to query your Markdown content:
+
+```tsx
+import { getCollection, getEntry } from "bunsie";
+
+// Get all entries in a collection
+const posts = await getCollection("blog");
+// → ContentEntry[] with { slug, frontmatter, html }
+
+// Get a single entry by slug
+const post = await getEntry("blog", "hello");
+```
+
+## Configuration
 
 Create `ssg.config.ts` in your project root to override defaults:
 
@@ -133,18 +152,27 @@ Create `ssg.config.ts` in your project root to override defaults:
 import type { SsgConfig } from "bunsie";
 
 export default {
-   pagesDir: "pages",
-   contentDir: "content",
-   layoutsDir: "layouts",
-   publicDir: "public",
-   outDir: "dist",
+  pagesDir: "pages",     // Page components (default: "pages")
+  contentDir: "content", // Markdown content (default: "content")
+  layoutsDir: "layouts", // Layout templates (default: "layouts")
+  publicDir: "public",   // Static assets (default: "public")
+  outDir: "dist",        // Build output (default: "dist")
 } satisfies Partial<SsgConfig>;
 ```
 
 ## CLI
 
-```bash
-bunsie build           # Build the site to dist/
-bunsie dev             # Start dev server with live reload
-bunsie build --root .  # Specify project root
 ```
+Usage: bunsie <command> [options]
+
+Commands:
+  build              Build the site for production
+  dev                Start the dev server with live reload (default: port 3000)
+
+Options:
+  --root <path>      Set the project root directory (default: cwd)
+```
+
+## License
+
+[MIT](LICENSE)
