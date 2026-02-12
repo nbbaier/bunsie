@@ -56,11 +56,11 @@ Create TSX components in the `pages/` directory. Each file becomes a route:
 ```tsx
 // pages/index.tsx → /
 export default function Home() {
-  return (
-    <div>
-      <h1>Hello World</h1>
-    </div>
-  );
+   return (
+      <div>
+         <h1>Hello World</h1>
+      </div>
+   );
 }
 ```
 
@@ -89,24 +89,24 @@ import { getCollection } from "bunsie";
 import type { StaticPath } from "bunsie";
 
 export async function getStaticPaths(): Promise<StaticPath[]> {
-  const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { title: post.frontmatter.title, html: post.html },
-  }));
+   const posts = await getCollection("blog");
+   return posts.map((post) => ({
+      params: { slug: post.slug },
+      props: { title: post.frontmatter.title, html: post.html },
+   }));
 }
 
 export default function BlogPost(props: {
-  params: { slug: string };
-  title: string;
-  html: string;
+   params: { slug: string };
+   title: string;
+   html: string;
 }) {
-  return (
-    <article>
-      <h1>{props.title}</h1>
-      <div>{props.html}</div>
-    </article>
-  );
+   return (
+      <article>
+         <h1>{props.title}</h1>
+         <div>{props.html}</div>
+      </article>
+   );
 }
 ```
 
@@ -117,15 +117,15 @@ Define reusable HTML shells in the `layouts/` directory. Pages are wrapped in th
 ```tsx
 // layouts/default.tsx
 export default function DefaultLayout({ children }: { children: string }) {
-  return (
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <title>My Site</title>
-      </head>
-      <body>{children}</body>
-    </html>
-  );
+   return (
+      <html lang="en">
+         <head>
+            <meta charset="UTF-8" />
+            <title>My Site</title>
+         </head>
+         <body>{children}</body>
+      </html>
+   );
 }
 ```
 
@@ -152,11 +152,11 @@ Create `ssg.config.ts` in your project root to override defaults:
 import type { SsgConfig } from "bunsie";
 
 export default {
-  pagesDir: "pages",     // Page components (default: "pages")
-  contentDir: "content", // Markdown content (default: "content")
-  layoutsDir: "layouts", // Layout templates (default: "layouts")
-  publicDir: "public",   // Static assets (default: "public")
-  outDir: "dist",        // Build output (default: "dist")
+   pagesDir: "pages", // Page components (default: "pages")
+   contentDir: "content", // Markdown content (default: "content")
+   layoutsDir: "layouts", // Layout templates (default: "layouts")
+   publicDir: "public", // Static assets (default: "public")
+   outDir: "dist", // Build output (default: "dist")
 } satisfies Partial<SsgConfig>;
 ```
 
