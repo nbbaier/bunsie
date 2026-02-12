@@ -1,0 +1,19 @@
+{
+	"name": "bunsie",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "src/index.ts",
+	"bin": {
+		"bunsie": "src/cli.ts"
+	},
+	"dependencies": {
+		"@kitajs/html": "^4",
+		"unified": "^11",
+		"remark-parse": "^11",
+		"remark-frontmatter": "^5",
+		"remark-extract-frontmatter": "^3",
+		"remark-rehype": "^11",
+		"rehype-stringify": "^10",
+		"yaml": "^2"
+	}
+}
