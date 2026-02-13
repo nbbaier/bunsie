@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun run ../bunsie/src/cli.ts build",
-    "dev": "bun run ../bunsie/src/cli.ts dev"
+    "build": "bunsie build",
+    "dev": "bunsie dev"
   },
   "dependencies": {
     "bunsie": "workspace:*",

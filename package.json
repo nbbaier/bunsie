@@ -2,7 +2,8 @@
   "name": "bunsie-monorepo",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "example"
   ],
   "devDependencies": {
     "@biomejs/biome": "2.3.14",
@@ -15,8 +16,8 @@
     "check": "ultracite check",
     "fix": "ultracite fix",
     "typecheck": "tsgo --noEmit",
-    "build": "bun run build:cli",
-    "build:cli": "cd packages/bunsie && bun run build:cli"
+    "build:cli": "bun run --filter=bunsie build",
+    "build:example": "bun run --filter=example build"
   },
   "module": "index.ts",
   "type": "module"
