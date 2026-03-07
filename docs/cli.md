@@ -1,391 +1,132 @@
-# bunsie
+# bunsie CLI and Runtime Reference
 
-A minimal, convention-based static site generator powered by [Bun](https://bun.sh).
+`bunsie` is a convention-first static site generator for Bun. This reference documents the complete current command surface, runtime behavior, and exported APIs.
 
-Write pages as TSX components, author content in Markdown with YAML frontmatter, and build static sites with zero configuration. bunsie uses file-based routing, a unified/remark/rehype Markdown pipeline, and a layout system to generate fully static HTML from your source files.
+## Requirements
 
----
+- [Bun](https://bun.sh) v1.0+
+- `@kitajs/html` in the site project for TSX page and layout files
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [CLI Commands](#cli-commands)
-  - [build](#build)
-  - [dev](#dev)
-  - [Global Options](#global-options)
-- [Project Structure](#project-structure)
-- [Configuration](#configuration)
-- [Pages](#pages)
-- [Dynamic Routes](#dynamic-routes)
-- [Content](#content)
-  - [Markdown Files](#markdown-files)
-  - [Content Collections](#content-collections)
-- [Layouts](#layouts)
-  - [Default Layout](#default-layout)
-  - [Custom Layouts](#custom-layouts)
-  - [Specifying a Layout per Page](#specifying-a-layout-per-page)
-- [Content API](#content-api)
-  - [getCollection()](#getcollection)
-  - [getEntry()](#getentry)
-  - [getRoutes()](#getroutes)
-  - [setContentDir()](#setcontentdir)
-- [Static Assets](#static-assets)
-- [Dev Server](#dev-server)
-  - [Live Reload](#live-reload)
-  - [WebSocket Details](#websocket-details)
-  - [Port Configuration](#port-configuration)
-- [Type Reference](#type-reference)
-- [Error Reference](#error-reference)
-
----
-
-## Installation
-
-bunsie requires [Bun](https://bun.sh) v1.0 or later.
+Install in a site project:
 
 ```bash
-bun add bunsie
-```
-
-This installs bunsie as a project dependency and makes the `bunsie` CLI available via `bun run` or `bunx`.
-
-To install globally:
-
-```bash
-bun add -g bunsie
-```
-
-You will also need the `@kitajs/html` package for TSX support (it is included as a dependency of bunsie, but your page files use it directly):
-
-```bash
-bun add @kitajs/html
-```
-
----
-
-## Getting Started
-
-This walkthrough creates a minimal site with a homepage, an about page, a blog listing, and Markdown-powered blog posts.
-
-### 1. Initialize the project
-
-```bash
-mkdir my-site && cd my-site
-bun init -y
 bun add bunsie @kitajs/html
 ```
 
-### 2. Create the directory structure
+## CLI Surface
+
+```text
+Usage: bunsie <build|dev> [--root <path>]
+```
+
+| Command | Description |
+| --- | --- |
+| `build` | Build the site into the configured output directory. |
+| `dev` | Build once, serve output, watch source directories, and live-reload browsers on rebuild. |
+
+| Global Option | Description |
+| --- | --- |
+| `--root <path>` | Project root directory. Defaults to the current working directory. `ssg.config.ts` is loaded from this directory, and all configured directories are resolved from it. |
+
+Examples:
 
 ```bash
-mkdir -p pages/blog content/blog layouts public
+bunsie build
+bunsie dev
+bunsie build --root ./example
+bunsie dev --root /absolute/path/to/site
 ```
 
-### 3. Configure TSX
+If no command (or an unknown command) is provided, `bunsie` prints:
 
-Create or update `tsconfig.json`:
-
-```json
-{
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "@kitajs/html",
-    "moduleResolution": "bundler",
-    "target": "esnext",
-    "module": "esnext"
-  }
-}
+```text
+Usage: bunsie <build|dev> [--root <path>]
 ```
 
-### 4. Create a layout
+and exits with status code `1`.
 
-**layouts/default.tsx**
+## Build Command
 
-```tsx
-export default function ({ children }: { children: string }) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Site</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-  <nav>
-    <a href="/">Home</a>
-    <a href="/about">About</a>
-    <a href="/blog">Blog</a>
-  </nav>
-  <main>${children}</main>
-</body>
-</html>`;
-}
+`bunsie build` runs the following pipeline:
+
+1. Removes `outDir` recursively and recreates it.
+2. Copies `publicDir` into `outDir` recursively. If `publicDir` is missing, this step is skipped.
+3. Sets the active content directory for content APIs and clears layout module cache.
+4. Scans `pagesDir` for `**/*.tsx` routes.
+5. Resolves static and dynamic routes (dynamic routes call `getStaticPaths()`).
+6. Stores resolved route metadata for `getRoutes()`.
+7. Renders each route and writes HTML files into `outDir`.
+
+Build output line format:
+
+```text
+Built <count> pages in <ms>ms → <absolute outDir path>
 ```
 
-### 5. Create pages
+## Dev Command
 
-**pages/index.tsx**
+`bunsie dev` starts with the same build pipeline and then starts a local server.
 
-```tsx
-export default function () {
-  return (
-    <div>
-      <h1>Welcome to my site</h1>
-      <p>Built with bunsie.</p>
-    </div>
-  );
-}
-```
+Default server behavior:
 
-**pages/about.tsx**
+1. Serves from `outDir` on port `3000`.
+2. Upgrades `GET /__ws` to a WebSocket endpoint for reload events.
+3. Watches `pagesDir`, `contentDir`, and `layoutsDir` recursively.
+4. Debounces file-change rebuilds by `100ms`.
+5. On successful rebuild, sends `"reload"` to every connected WebSocket client.
 
-```tsx
-export default function () {
-  return (
-    <div>
-      <h1>About</h1>
-      <p>This is a static site generated by bunsie.</p>
-    </div>
-  );
-}
-```
+Live reload script injection:
 
-### 6. Add Markdown content
+- HTML responses are modified by replacing `</body>` with an inline script plus `</body>`.
+- The script opens `ws://<host>/__ws`, reloads on `"reload"`, and reloads after 1 second if the socket closes.
 
-**content/blog/hello-world.md**
+File resolution and MIME behavior:
 
-```markdown
----
-title: Hello World
-date: 2024-01-15
----
+- Paths ending in `/` resolve to `<path>/index.html`.
+- Paths with no extension resolve to `<path>/index.html`.
+- Explicit file paths resolve directly.
+- Built-in MIME map includes `.html`, `.css`, `.js`, `.json`, `.png`, `.jpg`, `.svg`.
+- Unknown extensions are served as `application/octet-stream`.
+- Missing files return `404 Not Found`.
 
-This is my first blog post written in Markdown.
-```
+Shutdown behavior:
 
-**content/blog/getting-started.md**
+- `Ctrl+C` closes file watchers, stops the Bun server, and exits.
 
-```markdown
----
-title: Getting Started with bunsie
-date: 2024-01-20
----
+Port selection:
 
-bunsie makes static site generation simple.
-```
+- CLI runs dev mode on `3000`.
+- Programmatic usage supports a custom port via `dev(config, port)`.
 
-### 7. Create the blog listing page
+## Project Conventions
 
-**pages/blog/index.tsx**
+Default directory layout:
 
-```tsx
-import { getCollection } from "bunsie";
-
-export default async function () {
-  const posts = await getCollection("blog");
-  return (
-    <div>
-      <h1>Blog</h1>
-      <ul>
-        {posts.map((post) => (
-          <li>
-            <a href={`/blog/${post.slug}`}>
-              {String(post.frontmatter.title)}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-```
-
-### 8. Create the dynamic blog post page
-
-**pages/blog/[slug].tsx**
-
-```tsx
-import { getCollection, getEntry } from "bunsie";
-import type { StaticPath } from "bunsie";
-
-export async function getStaticPaths(): Promise<StaticPath[]> {
-  const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { frontmatter: post.frontmatter, html: post.html },
-  }));
-}
-
-export default function (props: {
-  params: { slug: string };
-  frontmatter: Record<string, unknown>;
-  html: string;
-}) {
-  return (
-    <article>
-      <h1>{String(props.frontmatter.title)}</h1>
-      <div>{props.html}</div>
-    </article>
-  );
-}
-```
-
-### 9. Add a stylesheet
-
-**public/style.css**
-
-```css
-body {
-  font-family: system-ui, sans-serif;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-nav a {
-  margin-right: 1rem;
-}
-```
-
-### 10. Run the dev server
-
-```bash
-bunx bunsie dev
-```
-
-Open `http://localhost:3000` in your browser. The site will rebuild and reload automatically when you edit any page, layout, or content file.
-
-### 11. Build for production
-
-```bash
-bunx bunsie build
-```
-
-The generated site is written to the `dist/` directory, ready to deploy to any static hosting provider.
-
----
-
-## CLI Commands
-
-```
-bunsie <command> [options]
-```
-
-If no command is provided (or an unrecognized command is given), bunsie prints usage information and exits with code 1.
-
-### build
-
-Generates the static site.
-
-```bash
-bunsie build [--root <path>]
-```
-
-The build process:
-
-1. Removes the output directory (`dist/` by default) and re-creates it.
-2. Copies the contents of `public/` into the output directory.
-3. Scans `pages/` for `.tsx` files and resolves all routes, including dynamic routes via `getStaticPaths()`.
-4. Renders each route through its page component and wraps it in the appropriate layout.
-5. Writes the resulting HTML files to the output directory.
-
-**Output:**
-
-```
-Built 5 pages in 42ms → /absolute/path/to/dist
-```
-
-### dev
-
-Starts a development server with live reload.
-
-```bash
-bunsie dev [--root <path>]
-```
-
-The dev server:
-
-1. Runs a full build on startup.
-2. Serves the output directory over HTTP on port 3000.
-3. Watches `pages/`, `content/`, and `layouts/` directories for changes.
-4. Rebuilds and sends a reload signal to all connected browsers when changes are detected.
-
-**Output:**
-
-```
-Built 5 pages in 42ms → /absolute/path/to/dist
-Dev server running at http://localhost:3000
-```
-
-Press `Ctrl+C` to stop the server.
-
-### Global Options
-
-| Option | Description |
-|---|---|
-| `--root <path>` | Set the project root directory. Defaults to the current working directory. All other paths (pages, content, layouts, public, output) are resolved relative to this root unless overridden in configuration. |
-
-**Examples:**
-
-```bash
-# Build a site in a different directory
-bunsie build --root ./packages/docs
-
-# Run the dev server for a specific project
-bunsie dev --root /home/user/my-site
-```
-
----
-
-## Project Structure
-
-bunsie uses a convention-based directory layout. All directory names are configurable via `ssg.config.ts`, but the defaults are:
-
-```
+```text
 your-site/
-├── ssg.config.ts          # Optional configuration
-├── layouts/
-│   └── default.tsx        # Default HTML shell wrapping page content
+├── ssg.config.ts
 ├── pages/
-│   ├── index.tsx          # → /index.html (URL: /)
-│   ├── about.tsx          # → /about/index.html (URL: /about)
-│   └── blog/
-│       ├── index.tsx      # → /blog/index.html (URL: /blog)
-│       └── [slug].tsx     # → /blog/:slug/index.html (dynamic route)
 ├── content/
-│   └── blog/
-│       ├── hello.md       # Content entry: collection "blog", slug "hello"
-│       └── world.md       # Content entry: collection "blog", slug "world"
+├── layouts/
 ├── public/
-│   ├── style.css          # Copied as-is to dist/style.css
-│   └── images/
-│       └── logo.png       # Copied as-is to dist/images/logo.png
-└── dist/                  # Generated output (do not edit)
+└── dist/
 ```
 
-### Directory Roles
+Directory meanings:
 
 | Directory | Purpose |
-|---|---|
-| `pages/` | TSX page components. File paths map to URL routes. |
-| `content/` | Markdown files organized into collections (subdirectories). |
-| `layouts/` | TSX layout components that wrap page content in an HTML shell. |
-| `public/` | Static assets copied verbatim to the output directory. |
-| `dist/` | Build output. Cleaned and regenerated on every build. |
-
----
+| --- | --- |
+| `pages/` | TSX page modules; file paths become route patterns. |
+| `content/` | Markdown collections under named subdirectories. |
+| `layouts/` | TSX layout modules used to wrap page HTML. |
+| `public/` | Static files copied as-is to output. |
+| `dist/` | Output directory (name configurable). |
 
 ## Configuration
 
-Configuration is optional. bunsie works with zero configuration using sensible defaults. To customize behavior, create a `ssg.config.ts` file in the project root.
+`bunsie` loads `ssg.config.ts` from the project root if it exists. Both `default` export and module-object exports are accepted.
 
-### ssg.config.ts
-
-The configuration file should export a default object (or a named export) with any of the following properties:
-
-```typescript
+```ts
 import type { SsgConfig } from "bunsie";
 
 export default {
@@ -397,701 +138,36 @@ export default {
 } satisfies Partial<SsgConfig>;
 ```
 
-### Configuration Options
+Config defaults:
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `pagesDir` | `string` | `"pages"` | Directory containing TSX page components. Relative to the project root. |
-| `contentDir` | `string` | `"content"` | Directory containing Markdown content collections. Relative to the project root. |
-| `layoutsDir` | `string` | `"layouts"` | Directory containing TSX layout components. Relative to the project root. |
-| `publicDir` | `string` | `"public"` | Directory containing static assets to copy to output. Relative to the project root. |
-| `outDir` | `string` | `"dist"` | Output directory for the built site. Relative to the project root. Cleared on every build. |
+| Property | Default |
+| --- | --- |
+| `pagesDir` | `"pages"` |
+| `contentDir` | `"content"` |
+| `layoutsDir` | `"layouts"` |
+| `publicDir` | `"public"` |
+| `outDir` | `"dist"` |
 
-All paths are resolved to absolute paths internally using the project root as the base.
+Resolved config values are absolute paths rooted at `root`.
 
-### Example: Custom directories
+## Pages And Routes
 
-```typescript
-// ssg.config.ts
-export default {
-  pagesDir: "src/pages",
-  contentDir: "src/content",
-  layoutsDir: "src/layouts",
-  outDir: "build",
-};
-```
+Page modules are discovered from `pages/**/*.tsx` and converted to URL patterns:
 
----
+- `pages/index.tsx` -> `/`
+- `pages/about.tsx` -> `/about`
+- `pages/blog/index.tsx` -> `/blog`
+- `pages/blog/[slug].tsx` -> `/blog/[slug]`
 
-## Pages
+Output paths are generated as:
 
-Pages are TSX files located in the `pages/` directory. Each page file must export a default function that returns an HTML string. bunsie uses `@kitajs/html` for JSX-to-string compilation.
+- `/` -> `index.html`
+- `/about` -> `about/index.html`
+- `/blog/hello` -> `blog/hello/index.html`
 
-### Basic Page
+Page module shape:
 
-**pages/index.tsx**
-
-```tsx
-export default function () {
-  return (
-    <div>
-      <h1>Home</h1>
-      <p>Welcome to my site.</p>
-    </div>
-  );
-}
-```
-
-This generates `/index.html` (served at `/`).
-
-### Nested Pages
-
-File paths map directly to URL paths:
-
-| File | Output | URL |
-|---|---|---|
-| `pages/index.tsx` | `dist/index.html` | `/` |
-| `pages/about.tsx` | `dist/about/index.html` | `/about` |
-| `pages/blog/index.tsx` | `dist/blog/index.html` | `/blog` |
-| `pages/docs/intro.tsx` | `dist/docs/intro/index.html` | `/docs/intro` |
-
-### Page Props
-
-Static (non-dynamic) pages receive an empty props object. Dynamic pages receive `params` along with any additional props defined in `getStaticPaths()`. See [Dynamic Routes](#dynamic-routes).
-
-### Async Pages
-
-Page components can be async functions:
-
-```tsx
-import { getCollection } from "bunsie";
-
-export default async function () {
-  const posts = await getCollection("blog");
-  return (
-    <ul>
-      {posts.map((p) => (
-        <li>{String(p.frontmatter.title)}</li>
-      ))}
-    </ul>
-  );
-}
-```
-
-### Specifying a Layout
-
-Export a `layout` string to choose which layout wraps the page:
-
-```tsx
-export const layout = "docs";
-
-export default function () {
-  return <h1>Documentation</h1>;
-}
-```
-
-If `layout` is not exported, bunsie uses `"default"`. See [Layouts](#layouts) for details.
-
----
-
-## Dynamic Routes
-
-Dynamic routes use bracket syntax in filenames to generate multiple pages from a single template. A file named `[param].tsx` generates one page per entry returned by `getStaticPaths()`.
-
-### File Naming
-
-Any filename segment wrapped in square brackets is treated as a dynamic parameter:
-
-| File | Pattern | Parameter |
-|---|---|---|
-| `pages/blog/[slug].tsx` | `/blog/[slug]` | `slug` |
-| `pages/docs/[category]/[page].tsx` | `/docs/[category]/[page]` | `category`, `page` |
-
-### getStaticPaths()
-
-Every dynamic route **must** export a `getStaticPaths()` function. This function returns an array of objects, each specifying the `params` that fill in the dynamic segments and an optional `props` object passed to the page component.
-
-```tsx
-import type { StaticPath } from "bunsie";
-
-export async function getStaticPaths(): Promise<StaticPath[]> {
-  return [
-    { params: { slug: "hello" }, props: { title: "Hello" } },
-    { params: { slug: "world" }, props: { title: "World" } },
-  ];
-}
-
-export default function (props: { params: { slug: string }; title: string }) {
-  return (
-    <article>
-      <h1>{props.title}</h1>
-      <p>Post slug: {props.params.slug}</p>
-    </article>
-  );
-}
-```
-
-This generates:
-
-- `dist/blog/hello/index.html`
-- `dist/blog/world/index.html`
-
-### Using Content Collections with Dynamic Routes
-
-A common pattern is to generate pages from a Markdown content collection:
-
-```tsx
-import { getCollection, getEntry } from "bunsie";
-import type { StaticPath } from "bunsie";
-
-export async function getStaticPaths(): Promise<StaticPath[]> {
-  const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: {
-      frontmatter: post.frontmatter,
-      html: post.html,
-    },
-  }));
-}
-
-export default function (props: {
-  params: { slug: string };
-  frontmatter: Record<string, unknown>;
-  html: string;
-}) {
-  return (
-    <article>
-      <h1>{String(props.frontmatter.title)}</h1>
-      <time>{String(props.frontmatter.date)}</time>
-      <div>{props.html}</div>
-    </article>
-  );
-}
-```
-
-### Error: Missing getStaticPaths
-
-If a dynamic route file does not export `getStaticPaths()`, the build will fail with:
-
-```
-Dynamic route /blog/[slug] must export getStaticPaths()
-```
-
----
-
-## Content
-
-bunsie includes a built-in Markdown processing pipeline using unified, remark, and rehype. Content is organized into **collections** -- subdirectories of the `content/` directory containing `.md` files.
-
-### Markdown Files
-
-Each Markdown file can include YAML frontmatter at the top:
-
-**content/blog/hello-world.md**
-
-```markdown
----
-title: Hello World
-date: 2024-01-15
-tags:
-  - introduction
-  - meta
-draft: false
----
-
-This is the body of the post. It supports **bold**, *italic*, [links](https://example.com), and all standard Markdown syntax.
-
-## Subheading
-
-- List item one
-- List item two
-```
-
-The frontmatter is parsed into a `Record<string, unknown>` object. The Markdown body is converted to HTML via the remark/rehype pipeline.
-
-### Content Collections
-
-A collection is a subdirectory under `content/`. The directory name is the collection name.
-
-```
-content/
-├── blog/
-│   ├── hello-world.md      # collection: "blog", slug: "hello-world"
-│   ├── second-post.md      # collection: "blog", slug: "second-post"
-│   └── third-post.md       # collection: "blog", slug: "third-post"
-└── docs/
-    ├── installation.md      # collection: "docs", slug: "installation"
-    └── configuration.md     # collection: "docs", slug: "configuration"
-```
-
-The **slug** is derived from the filename with the `.md` extension removed.
-
-Collections are accessed using the `getCollection()` and `getEntry()` functions. See [Content API](#content-api).
-
-### Markdown Processing Pipeline
-
-bunsie processes Markdown using the following unified pipeline:
-
-1. **remark-parse** -- Parses Markdown into an AST
-2. **remark-frontmatter** -- Extracts YAML frontmatter blocks
-3. **remark-extract-frontmatter** -- Makes frontmatter data available on the result object (parsed with the `yaml` package)
-4. **remark-rehype** -- Converts the Markdown AST to an HTML AST
-5. **rehype-stringify** -- Serializes the HTML AST to an HTML string
-
----
-
-## Layouts
-
-Layouts are TSX components that wrap page content in a reusable HTML shell. They are stored in the `layouts/` directory.
-
-### Default Layout
-
-If no layout files exist, bunsie uses a built-in default layout:
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-${children}
-</body>
-</html>
-```
-
-To override the default, create `layouts/default.tsx`:
-
-**layouts/default.tsx**
-
-```tsx
-export default function ({ children }: { children: string }) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Site</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-  <header>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/about">About</a>
-    </nav>
-  </header>
-  <main>${children}</main>
-  <footer>
-    <p>Copyright 2024</p>
-  </footer>
-</body>
-</html>`;
-}
-```
-
-### Custom Layouts
-
-Create additional layout files for different page types:
-
-**layouts/docs.tsx**
-
-```tsx
-export default function ({ children }: { children: string }) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Documentation</title>
-  <link rel="stylesheet" href="/docs.css">
-</head>
-<body>
-  <aside>
-    <nav>
-      <a href="/docs/intro">Introduction</a>
-      <a href="/docs/api">API</a>
-    </nav>
-  </aside>
-  <main>${children}</main>
-</body>
-</html>`;
-}
-```
-
-### Specifying a Layout per Page
-
-Export a `layout` string from any page module to select which layout wraps that page:
-
-```tsx
-export const layout = "docs";
-
-export default function () {
-  return <h1>API Reference</h1>;
-}
-```
-
-**Layout resolution order:**
-
-1. If the page exports `layout`, bunsie looks for `layouts/{layout}.tsx`.
-2. If the page does not export `layout`, bunsie looks for `layouts/default.tsx`.
-3. If the layout file does not exist, bunsie uses the built-in default layout (a minimal HTML5 document).
-
-Layout modules are cached during a build. The cache is cleared at the start of each build and each rebuild in dev mode.
-
----
-
-## Content API
-
-bunsie exports several functions for querying content and route information. Import them from `"bunsie"`.
-
-### getCollection()
-
-Retrieves all entries from a named content collection.
-
-**Signature:**
-
-```typescript
-function getCollection(
-  name: string,
-  contentDir?: string
-): Promise<ContentEntry[]>
-```
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `name` | `string` | Yes | The collection name, corresponding to a subdirectory under the content directory. |
-| `contentDir` | `string` | No | Override the content directory path. If omitted, uses the directory set during the build process. |
-
-**Returns:** `Promise<ContentEntry[]>` -- An array of content entries sorted alphabetically by slug.
-
-**Example:**
-
-```tsx
-import { getCollection } from "bunsie";
-
-export default async function () {
-  const posts = await getCollection("blog");
-
-  return (
-    <ul>
-      {posts.map((post) => (
-        <li>
-          <a href={`/blog/${post.slug}`}>
-            {String(post.frontmatter.title)}
-          </a>
-          <span>{String(post.frontmatter.date)}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-```
-
-### getEntry()
-
-Retrieves a single content entry by collection name and slug.
-
-**Signature:**
-
-```typescript
-function getEntry(
-  name: string,
-  slug: string,
-  contentDir?: string
-): Promise<ContentEntry>
-```
-
-**Parameters:**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `name` | `string` | Yes | The collection name. |
-| `slug` | `string` | Yes | The entry slug (filename without `.md` extension). |
-| `contentDir` | `string` | No | Override the content directory path. |
-
-**Returns:** `Promise<ContentEntry>` -- A single content entry.
-
-**Example:**
-
-```tsx
-import { getEntry } from "bunsie";
-
-export default async function () {
-  const post = await getEntry("blog", "hello-world");
-
-  return (
-    <article>
-      <h1>{String(post.frontmatter.title)}</h1>
-      <div>{post.html}</div>
-    </article>
-  );
-}
-```
-
-### getRoutes()
-
-Returns information about all resolved routes in the current build. This is useful for generating sitemaps, navigation menus, or other route-aware components.
-
-**Signature:**
-
-```typescript
-function getRoutes(): RouteInfo[]
-```
-
-**Returns:** `RouteInfo[]` -- An array of route information objects. Available after routes have been resolved during the build step.
-
-**Example:**
-
-```tsx
-import { getRoutes } from "bunsie";
-
-export default function () {
-  const routes = getRoutes();
-
-  return (
-    <nav>
-      <ul>
-        {routes.map((route) => (
-          <li>
-            <a href={route.url}>{route.url}</a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-```
-
-**Example: Generating a sitemap**
-
-```tsx
-import { getRoutes } from "bunsie";
-
-export default function () {
-  const routes = getRoutes();
-  const baseUrl = "https://example.com";
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${routes
-    .map(
-      (r) => `<url><loc>${baseUrl}${r.url}</loc></url>`
-    )
-    .join("\n  ")}
-</urlset>`;
-}
-```
-
-### setContentDir()
-
-Sets the content directory path used by `getCollection()` and `getEntry()` when no explicit `contentDir` argument is provided. This is called automatically during the build process; you typically do not need to call it manually.
-
-**Signature:**
-
-```typescript
-function setContentDir(dir: string): void
-```
-
----
-
-## Static Assets
-
-The `public/` directory contains static assets that are copied verbatim to the output directory during the build step. No transformation or processing is applied.
-
-```
-public/
-├── style.css         → dist/style.css
-├── favicon.ico       → dist/favicon.ico
-└── images/
-    ├── logo.png      → dist/images/logo.png
-    └── hero.jpg      → dist/images/hero.jpg
-```
-
-Reference static assets in your layouts and pages using absolute paths from the site root:
-
-```tsx
-// In a layout
-<link rel="stylesheet" href="/style.css">
-<img src="/images/logo.png" alt="Logo">
-```
-
-If the `public/` directory does not exist, the copy step is silently skipped.
-
-**Note:** The output directory (`dist/` by default) is completely removed and re-created on every build. Do not place files in the output directory manually; they will be deleted.
-
----
-
-## Dev Server
-
-The `bunsie dev` command starts a development server for local previewing with automatic rebuilds.
-
-### Behavior
-
-1. A full production build runs on startup.
-2. A Bun HTTP server serves files from the output directory.
-3. File system watchers monitor `pages/`, `content/`, and `layouts/` directories recursively.
-4. When a change is detected, the project is rebuilt and all connected browsers are instructed to reload.
-5. Changes are debounced with a 100ms delay to batch rapid edits.
-
-### File Serving
-
-The dev server resolves requests to files in the output directory:
-
-- Requests for paths ending in `/` or paths without a file extension are resolved to `index.html` within the corresponding directory.
-- Standard MIME types are applied based on file extension: `.html`, `.css`, `.js`, `.json`, `.png`, `.jpg`, `.svg`.
-- Unknown file types are served as `application/octet-stream`.
-- Missing files return a `404 Not Found` response.
-
-### Live Reload
-
-The dev server injects a small JavaScript snippet into every HTML response just before the closing `</body>` tag:
-
-```html
-<script>
-(function() {
-  const ws = new WebSocket("ws://" + location.host + "/__ws");
-  ws.onmessage = function(e) {
-    if (e.data === "reload") location.reload();
-  };
-  ws.onclose = function() {
-    setTimeout(function() { location.reload(); }, 1000);
-  };
-})();
-</script>
-```
-
-This script:
-
-- Opens a WebSocket connection to `ws://localhost:3000/__ws`.
-- Listens for `"reload"` messages and reloads the page.
-- If the connection closes (e.g., server restart), retries after 1 second.
-
-### WebSocket Details
-
-| Property | Value |
-|---|---|
-| Endpoint | `ws://localhost:{port}/__ws` |
-| Message format | Plain text |
-| Reload signal | `"reload"` |
-| Reconnect delay | 1000ms |
-
-### Port Configuration
-
-The dev server listens on port **3000** by default. Port configuration is currently only available when using the `dev()` function programmatically:
-
-```typescript
-import { dev, loadConfig } from "bunsie";
-
-const config = await loadConfig(process.cwd());
-await dev(config, 8080); // Serve on port 8080
-```
-
-### Module Cache Clearing
-
-During rebuilds, the dev server clears `require.cache` entries for files in the `pages/` and `layouts/` directories. This ensures that updated page and layout modules are re-evaluated rather than served from stale cached imports.
-
-### Shutdown
-
-Press `Ctrl+C` to stop the dev server. This cleanly closes all file watchers and stops the HTTP server.
-
----
-
-## Type Reference
-
-All types are exported from the `"bunsie"` package:
-
-```typescript
-import type {
-  SsgConfig,
-  ResolvedConfig,
-  ContentEntry,
-  StaticPath,
-  PageModule,
-  Route,
-  ResolvedRoute,
-  RouteInfo,
-  LayoutModule,
-} from "bunsie";
-```
-
-### SsgConfig
-
-User-facing configuration object. All directory paths are relative to the project root.
-
-```typescript
-interface SsgConfig {
-  root: string;
-  pagesDir: string;
-  contentDir: string;
-  layoutsDir: string;
-  publicDir: string;
-  outDir: string;
-}
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `root` | `string` | Absolute path to the project root directory. |
-| `pagesDir` | `string` | Path to the pages directory. |
-| `contentDir` | `string` | Path to the content directory. |
-| `layoutsDir` | `string` | Path to the layouts directory. |
-| `publicDir` | `string` | Path to the public assets directory. |
-| `outDir` | `string` | Path to the build output directory. |
-
-### ResolvedConfig
-
-Extended from `SsgConfig`. All paths are resolved to absolute paths. This is the config object used internally after `loadConfig()` processes the user configuration.
-
-```typescript
-interface ResolvedConfig extends SsgConfig {
-  // All paths resolved to absolute
-}
-```
-
-### ContentEntry
-
-Represents a single Markdown content entry within a collection.
-
-```typescript
-interface ContentEntry {
-  slug: string;
-  frontmatter: Record<string, unknown>;
-  html: string;
-}
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `slug` | `string` | The entry identifier, derived from the filename (without `.md`). |
-| `frontmatter` | `Record<string, unknown>` | Parsed YAML frontmatter as a key-value object. |
-| `html` | `string` | The Markdown body rendered as an HTML string. |
-
-### StaticPath
-
-Defines a single path instance for a dynamic route, returned by `getStaticPaths()`.
-
-```typescript
-interface StaticPath {
-  params: Record<string, string>;
-  props?: Record<string, unknown>;
-}
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `params` | `Record<string, string>` | Key-value pairs mapping parameter names to their values. Each key must correspond to a `[param]` segment in the route pattern. |
-| `props` | `Record<string, unknown>` | Optional. Additional data passed to the page component. |
-
-### PageModule
-
-The expected shape of a page `.tsx` module.
-
-```typescript
+```ts
 interface PageModule {
   default: (props: Record<string, unknown>) => string;
   getStaticPaths?: () => StaticPath[] | Promise<StaticPath[]>;
@@ -1099,91 +175,116 @@ interface PageModule {
 }
 ```
 
-| Property | Type | Description |
-|---|---|---|
-| `default` | `(props: Record<string, unknown>) => string` | The page render function. Receives `params` and any props from `getStaticPaths()`. Returns an HTML string. |
-| `getStaticPaths` | `() => StaticPath[] \| Promise<StaticPath[]>` | Required for dynamic routes. Returns the list of paths to generate. |
-| `layout` | `string` | Optional. The name of the layout to use (without `.tsx` extension). Defaults to `"default"`. |
+Dynamic route behavior:
 
-### Route
+- Route files containing `[param]` segments are dynamic.
+- Every dynamic route must export `getStaticPaths()`.
+- Missing `getStaticPaths()` throws `Dynamic route <pattern> must export getStaticPaths()`.
+- Each returned entry defines `params` and optional `props`.
 
-Represents a discovered route from the file system scan.
+### Layout Resolution
 
-```typescript
-interface Route {
-  filePath: string;
-  urlPattern: string;
-  isDynamic: boolean;
-  paramNames: string[];
-}
+- `layout` export on a page chooses `layouts/<layout>.tsx`.
+- If no `layout` export exists, `layouts/default.tsx` is used when present.
+- If the selected layout file does not exist, a built-in minimal HTML layout is used.
+- Layout modules are cached per build and cache is cleared before each build/rebuild.
+
+## Content And Markdown
+
+Content APIs:
+
+- `getCollection(name, contentDir?)`
+- `getEntry(name, slug, contentDir?)`
+- `setContentDir(dir)`
+
+Collection behavior:
+
+- A collection is a subdirectory of `contentDir`.
+- `getCollection("blog")` reads `contentDir/blog/*.md`.
+- Files are sorted by slug (`localeCompare`) before returning.
+- Slug is file name without `.md`.
+
+Frontmatter and Markdown behavior:
+
+- A leading UTF-8 BOM is stripped.
+- Frontmatter is parsed only when the file starts with a YAML block delimited by `---`.
+- YAML is parsed via `Bun.YAML.parse`.
+- Parsed frontmatter must be an object; otherwise an error is thrown.
+- Invalid YAML throws an `Invalid YAML frontmatter in <file>` error.
+- Markdown body is rendered with `Bun.markdown.html()`.
+
+## Route Metadata And Helper Utilities
+
+Route APIs:
+
+- `getRoutes()` returns an array of `{ url, params, frontmatter? }`.
+- Route metadata is populated during route resolution before page rendering.
+- `frontmatter` is set when route props include a `frontmatter` object.
+
+Helper exports:
+
+- `isIndexRoute(route)` returns `true` for `/`.
+- `isTopLevelRoute(route)` returns `true` for `/` and one-segment URLs like `/about`.
+- `LEADING_SLASH_REGEX` is `/^\//`.
+
+Example:
+
+```tsx
+import {
+  getRoutes,
+  isIndexRoute,
+  isTopLevelRoute,
+  LEADING_SLASH_REGEX,
+} from "bunsie";
+
+const links = getRoutes().filter(isTopLevelRoute).map((route) => ({
+  href: route.url,
+  label: isIndexRoute(route)
+    ? "Home"
+    : route.url.replace(LEADING_SLASH_REGEX, ""),
+}));
 ```
 
-| Property | Type | Description |
-|---|---|---|
-| `filePath` | `string` | Absolute path to the page `.tsx` file. |
-| `urlPattern` | `string` | The URL pattern, e.g., `/blog/[slug]`. |
-| `isDynamic` | `boolean` | `true` if the route contains dynamic `[param]` segments. |
-| `paramNames` | `string[]` | List of parameter names extracted from the pattern. |
+## Programmatic API
 
-### ResolvedRoute
+`bunsie` also exports internal build primitives:
 
-A fully resolved route ready for rendering. Dynamic routes produce one `ResolvedRoute` per entry from `getStaticPaths()`.
+- `loadConfig(root)`
+- `build(resolvedConfig)`
+- `dev(resolvedConfig, port?)`
+- `scanRoutes(pagesDir)`
+- `resolveRoutes(routes)`
+- `renderRoute(resolvedRoute, layoutsDir)`
 
-```typescript
-interface ResolvedRoute {
-  route: Route;
-  params: Record<string, string>;
-  props: Record<string, unknown>;
-  outputPath: string;
-}
+Programmatic dev server with a custom port:
+
+```ts
+import { dev, loadConfig } from "bunsie";
+
+const config = await loadConfig(process.cwd());
+await dev(config, 8080);
 ```
 
-| Property | Type | Description |
-|---|---|---|
-| `route` | `Route` | The original route definition. |
-| `params` | `Record<string, string>` | Resolved parameter values for this instance. |
-| `props` | `Record<string, unknown>` | Props to pass to the page component. |
-| `outputPath` | `string` | Relative path for the output HTML file (e.g., `blog/hello/index.html`). |
+## Exported Types
 
-### RouteInfo
+`bunsie` exports these types:
 
-Lightweight route information returned by `getRoutes()`, useful for building navigation or sitemaps.
-
-```typescript
-interface RouteInfo {
-  url: string;
-  params: Record<string, string>;
-  frontmatter?: Record<string, unknown>;
-}
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `url` | `string` | The fully resolved URL path (e.g., `/blog/hello`). |
-| `params` | `Record<string, string>` | Parameter values for this route. Empty object for static routes. |
-| `frontmatter` | `Record<string, unknown>` | Frontmatter from props, if the route's props included a `frontmatter` key. |
-
-### LayoutModule
-
-The expected shape of a layout `.tsx` module.
-
-```typescript
-interface LayoutModule {
-  default: (props: { children: string }) => string;
-}
-```
-
-| Property | Type | Description |
-|---|---|---|
-| `default` | `(props: { children: string }) => string` | The layout render function. Receives the page's rendered HTML as `children`. Returns a complete HTML document string. |
-
----
+- `SsgConfig`
+- `ResolvedConfig`
+- `ContentEntry`
+- `StaticPath`
+- `PageModule`
+- `Route`
+- `ResolvedRoute`
+- `RouteInfo`
+- `LayoutModule`
 
 ## Error Reference
 
-| Error | Cause | Resolution |
-|---|---|---|
-| `Dynamic route /path/[param] must export getStaticPaths()` | A page file with `[param]` in its path does not export a `getStaticPaths()` function. | Add an exported `getStaticPaths()` function to the page module that returns an array of `StaticPath` objects. |
-| `Usage: bunsie <build\|dev> [--root <path>]` | No command or an unrecognized command was provided to the CLI. | Run `bunsie build` or `bunsie dev`. |
-| Build errors logged to console | A page component, layout, or content file has a syntax error or references a missing file. | Check the error stack trace for the specific file and line number. |
-| `Rebuild failed: ...` | A file change triggered a rebuild in dev mode, but the rebuild encountered an error. | The dev server continues running. Fix the error and save again to trigger another rebuild. |
+| Error | Meaning |
+| --- | --- |
+| `Usage: bunsie <build\|dev> [--root <path>]` | Invalid or missing command. |
+| `Dynamic route <pattern> must export getStaticPaths()` | Dynamic route file does not export `getStaticPaths()`. |
+| `Invalid YAML frontmatter in <file>: <details>` | YAML frontmatter parsing failed. |
+| `YAML frontmatter in <file> must parse to an object, got <type>` | YAML parsed successfully but produced a non-object value. |
+| `Rebuild failed: ...` | Dev mode rebuild encountered an error and logged it; server keeps running. |
