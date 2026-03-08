@@ -16,7 +16,7 @@ bun add bunsie @kitajs/html
 ## CLI Surface
 
 ```text
-Usage: bunsie <build|dev> [--root <path>]
+Usage: bunsie <build|dev> [--root <path>] [--port <number>]
 ```
 
 | Command | Description |
@@ -24,9 +24,11 @@ Usage: bunsie <build|dev> [--root <path>]
 | `build` | Build the site into the configured output directory. |
 | `dev` | Build once, serve output, watch source directories, and live-reload browsers on rebuild. |
 
-| Global Option | Description |
+| Option | Description |
 | --- | --- |
 | `--root <path>` | Project root directory. Defaults to the current working directory. `ssg.config.ts` is loaded from this directory, and all configured directories are resolved from it. |
+| `--port <number>` | Dev server port. Defaults to `3000`. This option is only valid with `dev`. |
+| `--help`, `-h` | Print usage and exit with status code `0`. |
 
 Examples:
 
@@ -35,12 +37,13 @@ bunsie build
 bunsie dev
 bunsie build --root ./example
 bunsie dev --root /absolute/path/to/site
+bunsie dev --port 8080
 ```
 
 If no command (or an unknown command) is provided, `bunsie` prints:
 
 ```text
-Usage: bunsie <build|dev> [--root <path>]
+Usage: bunsie <build|dev> [--root <path>] [--port <number>]
 ```
 
 and exits with status code `1`.
@@ -71,7 +74,7 @@ Default server behavior:
 
 1. Serves from `outDir` on port `3000`.
 2. Upgrades `GET /__ws` to a WebSocket endpoint for reload events.
-3. Watches `pagesDir`, `contentDir`, and `layoutsDir` recursively.
+3. Watches `pagesDir`, `contentDir`, `layoutsDir`, and `publicDir` recursively.
 4. Debounces file-change rebuilds by `100ms`.
 5. On successful rebuild, sends `"reload"` to every connected WebSocket client.
 
@@ -85,7 +88,8 @@ File resolution and MIME behavior:
 - Paths ending in `/` resolve to `<path>/index.html`.
 - Paths with no extension resolve to `<path>/index.html`.
 - Explicit file paths resolve directly.
-- Built-in MIME map includes `.html`, `.css`, `.js`, `.json`, `.png`, `.jpg`, `.svg`.
+- Paths that attempt directory traversal return `400 Bad Request`.
+- Built-in MIME map includes `.html`, `.css`, `.js`, `.json`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`, `.ico`, `.txt`, `.woff`, and `.woff2`.
 - Unknown extensions are served as `application/octet-stream`.
 - Missing files return `404 Not Found`.
 
@@ -97,6 +101,7 @@ Port selection:
 
 - CLI runs dev mode on `3000`.
 - Programmatic usage supports a custom port via `dev(config, port)`.
+- Passing `--port` to commands other than `dev` throws an error.
 
 ## Project Conventions
 
@@ -181,6 +186,7 @@ Dynamic route behavior:
 - Every dynamic route must export `getStaticPaths()`.
 - Missing `getStaticPaths()` throws `Dynamic route <pattern> must export getStaticPaths()`.
 - Each returned entry defines `params` and optional `props`.
+- Dynamic route params must include all segment keys as non-empty strings.
 
 ### Layout Resolution
 
@@ -283,8 +289,12 @@ await dev(config, 8080);
 
 | Error | Meaning |
 | --- | --- |
-| `Usage: bunsie <build\|dev> [--root <path>]` | Invalid or missing command. |
+| `Usage: bunsie <build\|dev> [--root <path>] [--port <number>]` | Invalid or missing command. |
+| `Unknown option: <option>` | CLI received an unsupported flag. |
+| `Invalid port: <value>` | `--port` value is not an integer in the range `1-65535`. |
+| `--port can only be used with the dev command` | `--port` was passed to a non-`dev` command. |
 | `Dynamic route <pattern> must export getStaticPaths()` | Dynamic route file does not export `getStaticPaths()`. |
+| `Dynamic route <pattern> returned invalid params: missing or empty "<name>"` | `getStaticPaths()` returned a path with missing/invalid dynamic params. |
 | `Invalid YAML frontmatter in <file>: <details>` | YAML frontmatter parsing failed. |
 | `YAML frontmatter in <file> must parse to an object, got <type>` | YAML parsed successfully but produced a non-object value. |
 | `Rebuild failed: ...` | Dev mode rebuild encountered an error and logged it; server keeps running. |

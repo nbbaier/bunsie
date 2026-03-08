@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { Glob } from "bun";
+import { loadModule } from "./module-loader";
 import type { PageModule, ResolvedRoute, Route, RouteInfo } from "./types";
 
 let _routes: RouteInfo[] = [];
@@ -64,28 +65,49 @@ function extractParamNames(pattern: string): string[] {
   return matches.map((m) => m.slice(1, -1));
 }
 
+function validateDynamicParams(route: Route, params: Record<string, string>) {
+  for (const paramName of route.paramNames) {
+    const value = params[paramName];
+    if (typeof value !== "string" || value.length === 0) {
+      throw new Error(
+        `Dynamic route ${route.urlPattern} returned invalid params: missing or empty "${paramName}"`
+      );
+    }
+  }
+}
+
+async function resolveDynamicRoute(
+  route: Route,
+  mod: PageModule,
+  resolved: ResolvedRoute[]
+) {
+  if (!mod.getStaticPaths) {
+    throw new Error(
+      `Dynamic route ${route.urlPattern} must export getStaticPaths()`
+    );
+  }
+
+  const paths = await mod.getStaticPaths();
+  for (const { params, props } of paths) {
+    validateDynamicParams(route, params);
+    const outputPath = routeToOutputPath(route.urlPattern, params);
+    resolved.push({
+      route,
+      params,
+      props: props ?? {},
+      outputPath,
+    });
+  }
+}
+
 export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
   const resolved: ResolvedRoute[] = [];
 
   for (const route of routes) {
-    const mod: PageModule = await import(route.filePath);
+    const mod = await loadModule<PageModule>(route.filePath);
 
     if (route.isDynamic) {
-      if (!mod.getStaticPaths) {
-        throw new Error(
-          `Dynamic route ${route.urlPattern} must export getStaticPaths()`
-        );
-      }
-      const paths = await mod.getStaticPaths();
-      for (const { params, props } of paths) {
-        const outputPath = routeToOutputPath(route.urlPattern, params);
-        resolved.push({
-          route,
-          params,
-          props: props ?? {},
-          outputPath,
-        });
-      }
+      await resolveDynamicRoute(route, mod, resolved);
     } else {
       const outputPath = routeToOutputPath(route.urlPattern);
       resolved.push({

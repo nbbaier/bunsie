@@ -112,7 +112,7 @@ bunx bunsie build
 ## CLI
 
 ```text
-Usage: bunsie <build|dev> [--root <path>]
+Usage: bunsie <build|dev> [--root <path>] [--port <number>]
 ```
 
 | Command | Description |
@@ -123,6 +123,8 @@ Usage: bunsie <build|dev> [--root <path>]
 | Option | Description |
 | --- | --- |
 | `--root <path>` | Sets the project root used to load `ssg.config.ts` and resolve all directories. |
+| `--port <number>` | Sets the dev server port (only valid with `bunsie dev`). Defaults to `3000`. |
+| `--help`, `-h` | Prints CLI usage. |
 
 ## Project Structure
 

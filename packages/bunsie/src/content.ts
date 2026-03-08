@@ -2,14 +2,43 @@ import { join } from "node:path";
 import { Glob } from "bun";
 import type { ContentEntry } from "./types";
 
-let _contentDir = "";
+const CONTENT_DIR_KEY = Symbol.for("bunsie.contentDir");
+const CONTENT_DIR_ENV_KEY = "BUNSIE_CONTENT_DIR";
+
+interface ContentDirState {
+  [CONTENT_DIR_KEY]?: string;
+}
+
+function getSharedContentDirState(): ContentDirState {
+  return globalThis as ContentDirState;
+}
 
 const MD_EXTENSION_REGEX = /\.md$/;
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 const UTF8_BOM = "\uFEFF";
 
 export function setContentDir(dir: string) {
-  _contentDir = dir;
+  getSharedContentDirState()[CONTENT_DIR_KEY] = dir;
+}
+
+function resolveContentDir(override?: string): string {
+  if (override) {
+    return override;
+  }
+
+  const configuredDir = getSharedContentDirState()[CONTENT_DIR_KEY];
+  if (configuredDir) {
+    return configuredDir;
+  }
+
+  const envConfiguredDir = process.env[CONTENT_DIR_ENV_KEY];
+  if (envConfiguredDir) {
+    return envConfiguredDir;
+  }
+
+  throw new Error(
+    "Content directory is not configured. Call setContentDir(dir) or pass contentDir explicitly."
+  );
 }
 
 function normalizeFrontmatter(
@@ -67,7 +96,7 @@ export async function getCollection(
   name: string,
   contentDir?: string
 ): Promise<ContentEntry[]> {
-  const dir = contentDir ?? _contentDir;
+  const dir = resolveContentDir(contentDir);
   const collectionDir = join(dir, name);
   const glob = new Glob("*.md");
   const entries: ContentEntry[] = [];
@@ -88,7 +117,7 @@ export async function getEntry(
   slug: string,
   contentDir?: string
 ): Promise<ContentEntry> {
-  const dir = contentDir ?? _contentDir;
+  const dir = resolveContentDir(contentDir);
   const filePath = join(dir, name, `${slug}.md`);
   const { frontmatter, html } = await parseMarkdown(filePath);
   return { slug, frontmatter, html };

@@ -1,6 +1,7 @@
 import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { setContentDir } from "./content";
+import { setModuleLoadVersion } from "./module-loader";
 import { clearLayoutCache, renderRoute } from "./render";
 import { resolveRoutes, scanRoutes, setRoutes } from "./router";
 import type { ResolvedConfig } from "./types";
@@ -22,6 +23,8 @@ export async function build(config: ResolvedConfig) {
 
   // Set content dir so page modules can use getCollection/getEntry
   setContentDir(config.contentDir);
+  process.env.BUNSIE_CONTENT_DIR = config.contentDir;
+  setModuleLoadVersion(`${Date.now()}`);
   clearLayoutCache();
 
   // Scan and resolve routes

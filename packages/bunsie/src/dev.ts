@@ -1,5 +1,5 @@
 import { type FSWatcher, watch } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, isAbsolute, join, normalize } from "node:path";
 import type { ServerWebSocket } from "bun";
 import { build } from "./build";
 import type { ResolvedConfig } from "./types";
@@ -11,8 +11,19 @@ const MIME_TYPES: Record<string, string> = {
   ".json": "application/json",
   ".png": "image/png",
   ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
   ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".txt": "text/plain",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
 };
+
+const LEADING_SLASHES_REGEX = /^\/+/;
+const TRAILING_SLASH_REGEX = /\/+$/;
+const PARENT_PATH_SEGMENT_REGEX = /(^|[\\/])\.\.([\\/]|$)/;
 
 const WS_CLIENT_SCRIPT = `<script>
 (function() {
@@ -25,6 +36,41 @@ const WS_CLIENT_SCRIPT = `<script>
   };
 })();
 </script>`;
+
+function getSafeFilePath(outDir: string, pathname: string): string | null {
+  let decodedPathname: string;
+  try {
+    decodedPathname = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+
+  const cleanedPathname = decodedPathname
+    .replace(LEADING_SLASHES_REGEX, "")
+    .replace(TRAILING_SLASH_REGEX, "");
+  const normalizedPath = normalize(cleanedPathname);
+
+  if (
+    PARENT_PATH_SEGMENT_REGEX.test(normalizedPath) ||
+    isAbsolute(normalizedPath)
+  ) {
+    return null;
+  }
+
+  const relativePath =
+    pathname.endsWith("/") || !extname(normalizedPath)
+      ? join(normalizedPath, "index.html")
+      : normalizedPath;
+
+  return join(outDir, relativePath);
+}
+
+function injectLiveReloadScript(html: string): string {
+  if (html.includes("</body>")) {
+    return html.replace("</body>", `${WS_CLIENT_SCRIPT}</body>`);
+  }
+  return `${html}${WS_CLIENT_SCRIPT}`;
+}
 
 export async function dev(config: ResolvedConfig, port = 3000) {
   // Initial build
@@ -46,9 +92,9 @@ export async function dev(config: ResolvedConfig, port = 3000) {
       }
 
       // Serve static files from dist
-      let filePath = join(config.outDir, url.pathname);
-      if (url.pathname.endsWith("/") || !extname(url.pathname)) {
-        filePath = join(config.outDir, url.pathname, "index.html");
+      const filePath = getSafeFilePath(config.outDir, url.pathname);
+      if (!filePath) {
+        return new Response("Bad Request", { status: 400 });
       }
 
       const file = Bun.file(filePath);
@@ -63,10 +109,7 @@ export async function dev(config: ResolvedConfig, port = 3000) {
         // Inject live reload script into HTML
         if (ext === ".html") {
           return file.text().then((html) => {
-            const injected = html.replace(
-              "</body>",
-              `${WS_CLIENT_SCRIPT}</body>`
-            );
+            const injected = injectLiveReloadScript(html);
             return new Response(injected, {
               headers: { "Content-Type": "text/html" },
             });
@@ -82,6 +125,9 @@ export async function dev(config: ResolvedConfig, port = 3000) {
       open(ws) {
         clients.add(ws);
       },
+      message() {
+        // Dev websocket only pushes server -> client reload events.
+      },
       close(ws) {
         clients.delete(ws);
       },
@@ -94,7 +140,12 @@ export async function dev(config: ResolvedConfig, port = 3000) {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   const watchers: FSWatcher[] = [];
 
-  const dirsToWatch = [config.pagesDir, config.contentDir, config.layoutsDir];
+  const dirsToWatch = [
+    config.pagesDir,
+    config.contentDir,
+    config.layoutsDir,
+    config.publicDir,
+  ];
   for (const dir of dirsToWatch) {
     try {
       const watcher = watch(dir, { recursive: true }, () => {
@@ -104,15 +155,6 @@ export async function dev(config: ResolvedConfig, port = 3000) {
         debounceTimer = setTimeout(async () => {
           console.log("Change detected, rebuilding...");
           try {
-            // Clear module cache for page/layout modules
-            for (const key of Object.keys(require.cache)) {
-              if (
-                key.startsWith(config.pagesDir) ||
-                key.startsWith(config.layoutsDir)
-              ) {
-                delete require.cache[key];
-              }
-            }
             await build(config);
             for (const ws of clients) {
               ws.send("reload");
