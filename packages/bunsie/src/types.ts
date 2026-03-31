@@ -1,10 +1,10 @@
 export interface SsgConfig {
-  root: string;
-  pagesDir: string;
   contentDir: string;
   layoutsDir: string;
-  publicDir: string;
   outDir: string;
+  pagesDir: string;
+  publicDir: string;
+  root: string;
 }
 
 export interface ResolvedConfig extends SsgConfig {
@@ -12,9 +12,9 @@ export interface ResolvedConfig extends SsgConfig {
 }
 
 export interface ContentEntry {
-  slug: string;
   frontmatter: Record<string, unknown>;
   html: string;
+  slug: string;
 }
 
 export interface StaticPath {
@@ -30,22 +30,23 @@ export interface PageModule {
 
 export interface Route {
   filePath: string;
-  urlPattern: string;
   isDynamic: boolean;
   paramNames: string[];
+  urlPattern: string;
 }
 
 export interface ResolvedRoute {
-  route: Route;
+  module: PageModule;
+  outputPath: string;
   params: Record<string, string>;
   props: Record<string, unknown>;
-  outputPath: string;
+  route: Route;
 }
 
 export interface RouteInfo {
-  url: string;
-  params: Record<string, string>;
   frontmatter?: Record<string, unknown>;
+  params: Record<string, string>;
+  url: string;
 }
 
 export interface LayoutModule {

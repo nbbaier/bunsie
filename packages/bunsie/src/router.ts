@@ -7,17 +7,18 @@ let _routes: RouteInfo[] = [];
 const TSX_EXTENSION_REGEX = /\.tsx$/;
 const BACKSLASH_REGEX = /\\/g;
 const LEADING_SLASH_REGEX = /^\//;
+const PARAM_SEGMENT_REGEX = /\[(\w+)\]/g;
 
 export function setRoutes(resolved: ResolvedRoute[]) {
   _routes = resolved.map((r) => {
-    let url = r.route.urlPattern;
-    for (const [key, value] of Object.entries(r.params)) {
-      url = url.replace(`[${key}]`, value);
-    }
     const frontmatter = r.props.frontmatter as
       | Record<string, unknown>
       | undefined;
-    return { url, params: r.params, frontmatter };
+    return {
+      url: interpolateRoutePattern(r.route.urlPattern, r.params),
+      params: r.params,
+      frontmatter,
+    };
   });
 }
 
@@ -58,7 +59,7 @@ function fileToUrlPattern(file: string): string {
 }
 
 function extractParamNames(pattern: string): string[] {
-  const matches = pattern.match(/\[(\w+)\]/g);
+  const matches = pattern.match(PARAM_SEGMENT_REGEX);
   if (!matches) {
     return [];
   }
@@ -92,6 +93,7 @@ async function resolveDynamicRoute(
     validateDynamicParams(route, params);
     const outputPath = routeToOutputPath(route.urlPattern, params);
     resolved.push({
+      module: mod,
       route,
       params,
       props: props ?? {},
@@ -111,6 +113,7 @@ export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
     } else {
       const outputPath = routeToOutputPath(route.urlPattern);
       resolved.push({
+        module: mod,
         route,
         params: {},
         props: {},
@@ -126,18 +129,28 @@ export function routeToOutputPath(
   pattern: string,
   params?: Record<string, string>
 ): string {
-  let path = pattern;
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      path = path.replace(`[${key}]`, value);
-    }
-  }
-
-  // Remove leading slash
-  path = path.replace(LEADING_SLASH_REGEX, "");
+  const path = interpolateRoutePattern(pattern, params).replace(
+    LEADING_SLASH_REGEX,
+    ""
+  );
 
   if (path === "") {
     return "index.html";
   }
   return `${path}/index.html`;
+}
+
+function interpolateRoutePattern(
+  pattern: string,
+  params?: Record<string, string>
+): string {
+  if (!params) {
+    return pattern;
+  }
+
+  let resolvedPattern = pattern;
+  for (const [key, value] of Object.entries(params)) {
+    resolvedPattern = resolvedPattern.replace(`[${key}]`, value);
+  }
+  return resolvedPattern;
 }

@@ -72,6 +72,71 @@ function injectLiveReloadScript(html: string): string {
   return `${html}${WS_CLIENT_SCRIPT}`;
 }
 
+function getContentType(filePath: string): string {
+  const ext = extname(filePath);
+  return MIME_TYPES[ext] ?? "application/octet-stream";
+}
+
+async function serveFile(filePath: string): Promise<Response> {
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) {
+    return new Response("Not Found", { status: 404 });
+  }
+
+  if (extname(filePath) === ".html") {
+    const html = await file.text();
+    return new Response(injectLiveReloadScript(html), {
+      headers: { "Content-Type": "text/html" },
+    });
+  }
+
+  return new Response(file, {
+    headers: { "Content-Type": getContentType(filePath) },
+  });
+}
+
+function scheduleRebuild(
+  config: ResolvedConfig,
+  clients: Set<ServerWebSocket<unknown>>
+): () => void {
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  return () => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    debounceTimer = setTimeout(async () => {
+      console.log("Change detected, rebuilding...");
+      try {
+        await build(config);
+        for (const ws of clients) {
+          ws.send("reload");
+        }
+      } catch (err) {
+        console.error("Rebuild failed:", err);
+      }
+    }, 100);
+  };
+}
+
+function watchDirectories(
+  directories: string[],
+  onChange: () => void
+): FSWatcher[] {
+  const watchers: FSWatcher[] = [];
+
+  for (const directory of directories) {
+    try {
+      watchers.push(watch(directory, { recursive: true }, onChange));
+    } catch {
+      // Directory may not exist
+    }
+  }
+
+  return watchers;
+}
+
 export async function dev(config: ResolvedConfig, port = 3000) {
   // Initial build
   await build(config);
@@ -97,29 +162,7 @@ export async function dev(config: ResolvedConfig, port = 3000) {
         return new Response("Bad Request", { status: 400 });
       }
 
-      const file = Bun.file(filePath);
-      return file.exists().then((exists) => {
-        if (!exists) {
-          return new Response("Not Found", { status: 404 });
-        }
-
-        const ext = extname(filePath);
-        const contentType = MIME_TYPES[ext] || "application/octet-stream";
-
-        // Inject live reload script into HTML
-        if (ext === ".html") {
-          return file.text().then((html) => {
-            const injected = injectLiveReloadScript(html);
-            return new Response(injected, {
-              headers: { "Content-Type": "text/html" },
-            });
-          });
-        }
-
-        return new Response(file, {
-          headers: { "Content-Type": contentType },
-        });
-      });
+      return serveFile(filePath);
     },
     websocket: {
       open(ws) {
@@ -137,38 +180,11 @@ export async function dev(config: ResolvedConfig, port = 3000) {
   console.log(`Dev server running at http://localhost:${port}`);
 
   // Watch for changes
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  const watchers: FSWatcher[] = [];
-
-  const dirsToWatch = [
-    config.pagesDir,
-    config.contentDir,
-    config.layoutsDir,
-    config.publicDir,
-  ];
-  for (const dir of dirsToWatch) {
-    try {
-      const watcher = watch(dir, { recursive: true }, () => {
-        if (debounceTimer) {
-          clearTimeout(debounceTimer);
-        }
-        debounceTimer = setTimeout(async () => {
-          console.log("Change detected, rebuilding...");
-          try {
-            await build(config);
-            for (const ws of clients) {
-              ws.send("reload");
-            }
-          } catch (err) {
-            console.error("Rebuild failed:", err);
-          }
-        }, 100);
-      });
-      watchers.push(watcher);
-    } catch {
-      // Directory may not exist
-    }
-  }
+  const rebuild = scheduleRebuild(config, clients);
+  const watchers = watchDirectories(
+    [config.pagesDir, config.contentDir, config.layoutsDir, config.publicDir],
+    rebuild
+  );
 
   // Clean shutdown
   process.on("SIGINT", () => {

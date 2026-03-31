@@ -9,7 +9,7 @@
 - Markdown collections from `content/<collection>/*.md`
 - Layout components from `layouts/*.tsx`
 - Route metadata via `getRoutes()`
-- Route helper exports: `isIndexRoute`, `isTopLevelRoute`, and `LEADING_SLASH_REGEX`
+- Route helper exports: `isIndexRoute` and `isTopLevelRoute`
 - Live reload dev server over WebSocket
 - Optional `ssg.config.ts` with sensible defaults
 
@@ -168,7 +168,6 @@ export default {
 - `getRoutes()`
 - `isIndexRoute(route)`
 - `isTopLevelRoute(route)`
-- `LEADING_SLASH_REGEX`
 
 Example layout navigation:
 
@@ -177,14 +176,16 @@ import {
   getRoutes,
   isIndexRoute,
   isTopLevelRoute,
-  LEADING_SLASH_REGEX,
   type RouteInfo,
 } from "bunsie";
 
 function routeToLabel(route: RouteInfo): string {
-  return isIndexRoute(route)
-    ? "Home"
-    : route.url.replace(LEADING_SLASH_REGEX, "");
+  if (isIndexRoute(route)) {
+    return "Home";
+  }
+
+  const label = route.url.slice(1);
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export default function DefaultLayout({ children }: { children: string }) {

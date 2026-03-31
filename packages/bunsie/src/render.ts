@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { loadModule } from "./module-loader";
-import type { LayoutModule, PageModule, ResolvedRoute } from "./types";
+import type { LayoutModule, ResolvedRoute } from "./types";
 
 const layoutCache = new Map<string, LayoutModule>();
 
@@ -42,13 +42,12 @@ export async function renderRoute(
   resolved: ResolvedRoute,
   layoutsDir: string
 ): Promise<string> {
-  const mod = await loadModule<PageModule>(resolved.route.filePath);
-  const pageHtml = mod.default({
+  const pageHtml = resolved.module.default({
     params: resolved.params,
     ...resolved.props,
   });
 
-  const layoutName = mod.layout ?? "default";
+  const layoutName = resolved.module.layout ?? "default";
   const layout = await loadLayout(layoutsDir, layoutName);
 
   if (layout) {

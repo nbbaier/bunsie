@@ -3,7 +3,7 @@ export { build } from "./build";
 export { loadConfig } from "./config";
 export { getCollection, getEntry, setContentDir } from "./content";
 export { dev } from "./dev";
-export { isIndexRoute, isTopLevelRoute, LEADING_SLASH_REGEX } from "./helpers";
+export { isIndexRoute, isTopLevelRoute } from "./helpers";
 export { renderRoute } from "./render";
 export { getRoutes, resolveRoutes, scanRoutes } from "./router";
 export type {
