@@ -231,8 +231,6 @@ Helper exports:
 
 - `isIndexRoute(route)` returns `true` for `/`.
 - `isTopLevelRoute(route)` returns `true` for `/` and one-segment URLs like `/about`.
-- `LEADING_SLASH_REGEX` is `/^\//`.
-
 Example:
 
 ```tsx
@@ -240,7 +238,6 @@ import {
    getRoutes,
    isIndexRoute,
    isTopLevelRoute,
-   LEADING_SLASH_REGEX,
 } from "bunsie";
 
 const links = getRoutes()
@@ -249,7 +246,7 @@ const links = getRoutes()
       href: route.url,
       label: isIndexRoute(route)
          ? "Home"
-         : route.url.replace(LEADING_SLASH_REGEX, ""),
+         : route.url.slice(1),
    }));
 ```
 
