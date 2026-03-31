@@ -36,13 +36,13 @@ Create or update `tsconfig.json`:
 
 ```json
 {
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "@kitajs/html",
-    "moduleResolution": "bundler",
-    "target": "esnext",
-    "module": "esnext"
-  }
+   "compilerOptions": {
+      "jsx": "react-jsx",
+      "jsxImportSource": "@kitajs/html",
+      "moduleResolution": "bundler",
+      "target": "esnext",
+      "module": "esnext"
+   }
 }
 ```
 
@@ -50,12 +50,12 @@ Create `pages/index.tsx`:
 
 ```tsx
 export default function HomePage() {
-  return (
-    <div>
-      <h1>Hello from bunsie</h1>
-      <p>Static pages rendered from TSX.</p>
-    </div>
-  );
+   return (
+      <div>
+         <h1>Hello from bunsie</h1>
+         <p>Static pages rendered from TSX.</p>
+      </div>
+   );
 }
 ```
 
@@ -65,24 +65,24 @@ Create `pages/blog/[slug].tsx`:
 import { getCollection, type StaticPath } from "bunsie";
 
 export async function getStaticPaths(): Promise<StaticPath[]> {
-  const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { frontmatter: post.frontmatter, html: post.html },
-  }));
+   const posts = await getCollection("blog");
+   return posts.map((post) => ({
+      params: { slug: post.slug },
+      props: { frontmatter: post.frontmatter, html: post.html },
+   }));
 }
 
 export default function BlogPost(props: {
-  params: { slug: string };
-  frontmatter: Record<string, unknown>;
-  html: string;
+   params: { slug: string };
+   frontmatter: Record<string, unknown>;
+   html: string;
 }) {
-  return (
-    <article>
-      <h1>{String(props.frontmatter.title ?? props.params.slug)}</h1>
-      <div>{props.html}</div>
-    </article>
-  );
+   return (
+      <article>
+         <h1>{String(props.frontmatter.title ?? props.params.slug)}</h1>
+         <div>{props.html}</div>
+      </article>
+   );
 }
 ```
 
@@ -115,16 +115,16 @@ bunx bunsie build
 Usage: bunsie <build|dev> [--root <path>] [--port <number>]
 ```
 
-| Command | Description |
-| --- | --- |
-| `bunsie build` | Builds the static site into `outDir` (`dist` by default). |
-| `bunsie dev` | Runs an initial build, serves output on port `3000`, watches source directories, and triggers live reload on rebuild. |
+| Command        | Description                                                                                                           |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `bunsie build` | Builds the static site into `outDir` (`dist` by default).                                                             |
+| `bunsie dev`   | Runs an initial build, serves output on port `3000`, watches source directories, and triggers live reload on rebuild. |
 
-| Option | Description |
-| --- | --- |
-| `--root <path>` | Sets the project root used to load `ssg.config.ts` and resolve all directories. |
-| `--port <number>` | Sets the dev server port (only valid with `bunsie dev`). Defaults to `3000`. |
-| `--help`, `-h` | Prints CLI usage. |
+| Option            | Description                                                                     |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `--root <path>`   | Sets the project root used to load `ssg.config.ts` and resolve all directories. |
+| `--port <number>` | Sets the dev server port (only valid with `bunsie dev`). Defaults to `3000`.    |
+| `--help`, `-h`    | Prints CLI usage.                                                               |
 
 ## Project Structure
 
@@ -151,11 +151,11 @@ your-site/
 import type { SsgConfig } from "bunsie";
 
 export default {
-  pagesDir: "pages",
-  contentDir: "content",
-  layoutsDir: "layouts",
-  publicDir: "public",
-  outDir: "dist",
+   pagesDir: "pages",
+   contentDir: "content",
+   layoutsDir: "layouts",
+   publicDir: "public",
+   outDir: "dist",
 } satisfies Partial<SsgConfig>;
 ```
 
@@ -189,20 +189,20 @@ function routeToLabel(route: RouteInfo): string {
 }
 
 export default function DefaultLayout({ children }: { children: string }) {
-  const routes = getRoutes().filter(isTopLevelRoute);
+   const routes = getRoutes().filter(isTopLevelRoute);
 
-  return (
-    <html lang="en">
-      <body>
-        <nav>
-          {routes.map((route) => (
-            <a href={route.url}>{routeToLabel(route)}</a>
-          ))}
-        </nav>
-        <main>{children}</main>
-      </body>
-    </html>
-  );
+   return (
+      <html lang="en">
+         <body>
+            <nav>
+               {routes.map((route) => (
+                  <a href={route.url}>{routeToLabel(route)}</a>
+               ))}
+            </nav>
+            <main>{children}</main>
+         </body>
+      </html>
+   );
 }
 ```
 
