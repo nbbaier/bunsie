@@ -19,16 +19,16 @@ bun add bunsie @kitajs/html
 Usage: bunsie <build|dev> [--root <path>] [--port <number>]
 ```
 
-| Command | Description |
-| --- | --- |
-| `build` | Build the site into the configured output directory. |
-| `dev` | Build once, serve output, watch source directories, and live-reload browsers on rebuild. |
+| Command | Description                                                                              |
+| ------- | ---------------------------------------------------------------------------------------- |
+| `build` | Build the site into the configured output directory.                                     |
+| `dev`   | Build once, serve output, watch source directories, and live-reload browsers on rebuild. |
 
-| Option | Description |
-| --- | --- |
-| `--root <path>` | Project root directory. Defaults to the current working directory. `ssg.config.ts` is loaded from this directory, and all configured directories are resolved from it. |
-| `--port <number>` | Dev server port. Defaults to `3000`. This option is only valid with `dev`. |
-| `--help`, `-h` | Print usage and exit with status code `0`. |
+| Option            | Description                                                                                                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--root <path>`   | Project root directory. Defaults to the current working directory. `ssg.config.ts` is loaded from this directory, and all configured directories are resolved from it. |
+| `--port <number>` | Dev server port. Defaults to `3000`. This option is only valid with `dev`.                                                                                             |
+| `--help`, `-h`    | Print usage and exit with status code `0`.                                                                                                                             |
 
 Examples:
 
@@ -119,13 +119,13 @@ your-site/
 
 Directory meanings:
 
-| Directory | Purpose |
-| --- | --- |
-| `pages/` | TSX page modules; file paths become route patterns. |
-| `content/` | Markdown collections under named subdirectories. |
-| `layouts/` | TSX layout modules used to wrap page HTML. |
-| `public/` | Static files copied as-is to output. |
-| `dist/` | Output directory (name configurable). |
+| Directory  | Purpose                                             |
+| ---------- | --------------------------------------------------- |
+| `pages/`   | TSX page modules; file paths become route patterns. |
+| `content/` | Markdown collections under named subdirectories.    |
+| `layouts/` | TSX layout modules used to wrap page HTML.          |
+| `public/`  | Static files copied as-is to output.                |
+| `dist/`    | Output directory (name configurable).               |
 
 ## Configuration
 
@@ -135,23 +135,23 @@ Directory meanings:
 import type { SsgConfig } from "bunsie";
 
 export default {
-  pagesDir: "pages",
-  contentDir: "content",
-  layoutsDir: "layouts",
-  publicDir: "public",
-  outDir: "dist",
+   pagesDir: "pages",
+   contentDir: "content",
+   layoutsDir: "layouts",
+   publicDir: "public",
+   outDir: "dist",
 } satisfies Partial<SsgConfig>;
 ```
 
 Config defaults:
 
-| Property | Default |
-| --- | --- |
-| `pagesDir` | `"pages"` |
+| Property     | Default     |
+| ------------ | ----------- |
+| `pagesDir`   | `"pages"`   |
 | `contentDir` | `"content"` |
 | `layoutsDir` | `"layouts"` |
-| `publicDir` | `"public"` |
-| `outDir` | `"dist"` |
+| `publicDir`  | `"public"`  |
+| `outDir`     | `"dist"`    |
 
 Resolved config values are absolute paths rooted at `root`.
 
@@ -174,9 +174,9 @@ Page module shape:
 
 ```ts
 interface PageModule {
-  default: (props: Record<string, unknown>) => string;
-  getStaticPaths?: () => StaticPath[] | Promise<StaticPath[]>;
-  layout?: string;
+   default: (props: Record<string, unknown>) => string;
+   getStaticPaths?: () => StaticPath[] | Promise<StaticPath[]>;
+   layout?: string;
 }
 ```
 
@@ -231,24 +231,23 @@ Helper exports:
 
 - `isIndexRoute(route)` returns `true` for `/`.
 - `isTopLevelRoute(route)` returns `true` for `/` and one-segment URLs like `/about`.
-- `LEADING_SLASH_REGEX` is `/^\//`.
-
 Example:
 
 ```tsx
 import {
-  getRoutes,
-  isIndexRoute,
-  isTopLevelRoute,
-  LEADING_SLASH_REGEX,
+   getRoutes,
+   isIndexRoute,
+   isTopLevelRoute,
 } from "bunsie";
 
-const links = getRoutes().filter(isTopLevelRoute).map((route) => ({
-  href: route.url,
-  label: isIndexRoute(route)
-    ? "Home"
-    : route.url.replace(LEADING_SLASH_REGEX, ""),
-}));
+const links = getRoutes()
+   .filter(isTopLevelRoute)
+   .map((route) => ({
+      href: route.url,
+      label: isIndexRoute(route)
+         ? "Home"
+         : route.url.slice(1),
+   }));
 ```
 
 ## Programmatic API
@@ -287,14 +286,14 @@ await dev(config, 8080);
 
 ## Error Reference
 
-| Error | Meaning |
-| --- | --- |
-| `Usage: bunsie <build\|dev> [--root <path>] [--port <number>]` | Invalid or missing command. |
-| `Unknown option: <option>` | CLI received an unsupported flag. |
-| `Invalid port: <value>` | `--port` value is not an integer in the range `1-65535`. |
-| `--port can only be used with the dev command` | `--port` was passed to a non-`dev` command. |
-| `Dynamic route <pattern> must export getStaticPaths()` | Dynamic route file does not export `getStaticPaths()`. |
-| `Dynamic route <pattern> returned invalid params: missing or empty "<name>"` | `getStaticPaths()` returned a path with missing/invalid dynamic params. |
-| `Invalid YAML frontmatter in <file>: <details>` | YAML frontmatter parsing failed. |
-| `YAML frontmatter in <file> must parse to an object, got <type>` | YAML parsed successfully but produced a non-object value. |
-| `Rebuild failed: ...` | Dev mode rebuild encountered an error and logged it; server keeps running. |
+| Error                                                                        | Meaning                                                                    |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `Usage: bunsie <build\|dev> [--root <path>] [--port <number>]`               | Invalid or missing command.                                                |
+| `Unknown option: <option>`                                                   | CLI received an unsupported flag.                                          |
+| `Invalid port: <value>`                                                      | `--port` value is not an integer in the range `1-65535`.                   |
+| `--port can only be used with the dev command`                               | `--port` was passed to a non-`dev` command.                                |
+| `Dynamic route <pattern> must export getStaticPaths()`                       | Dynamic route file does not export `getStaticPaths()`.                     |
+| `Dynamic route <pattern> returned invalid params: missing or empty "<name>"` | `getStaticPaths()` returned a path with missing/invalid dynamic params.    |
+| `Invalid YAML frontmatter in <file>: <details>`                              | YAML frontmatter parsing failed.                                           |
+| `YAML frontmatter in <file> must parse to an object, got <type>`             | YAML parsed successfully but produced a non-object value.                  |
+| `Rebuild failed: ...`                                                        | Dev mode rebuild encountered an error and logged it; server keeps running. |

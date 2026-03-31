@@ -2,14 +2,16 @@ import {
   getRoutes,
   isIndexRoute,
   isTopLevelRoute,
-  LEADING_SLASH_REGEX,
   type RouteInfo,
 } from "bunsie";
 
 function routeToLabel(route: RouteInfo): string {
-  return isIndexRoute(route)
-    ? "Home"
-    : route.url.replace(LEADING_SLASH_REGEX, "");
+  if (isIndexRoute(route)) {
+    return "Home";
+  }
+
+  const label = route.url.slice(1);
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export default function DefaultLayout({ children }: { children: string }) {
@@ -36,9 +38,8 @@ export default function DefaultLayout({ children }: { children: string }) {
       <body>
         <nav>
           {routes.map((r) => (
-            <a href={r.url}>
-              {routeToLabel(r).charAt(0).toUpperCase() +
-                routeToLabel(r).slice(1)}
+            <a href={r.url} key={r.url}>
+              {routeToLabel(r)}
             </a>
           ))}
         </nav>

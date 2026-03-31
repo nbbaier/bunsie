@@ -1,8 +1,7 @@
 import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { setContentDir } from "./content";
-import { setModuleLoadVersion } from "./module-loader";
-import { clearLayoutCache, renderRoute } from "./render";
+import { prepareBuildContext } from "./build-context";
+import { renderRoute } from "./render";
 import { resolveRoutes, scanRoutes, setRoutes } from "./router";
 import type { ResolvedConfig } from "./types";
 
@@ -14,18 +13,14 @@ export async function build(config: ResolvedConfig) {
   await mkdir(config.outDir, { recursive: true });
 
   // Copy public/ → dist/
-  const _publicDir = Bun.file(config.publicDir);
   try {
     await cp(config.publicDir, config.outDir, { recursive: true });
   } catch {
     // public dir may not exist, that's fine
   }
 
-  // Set content dir so page modules can use getCollection/getEntry
-  setContentDir(config.contentDir);
-  process.env.BUNSIE_CONTENT_DIR = config.contentDir;
-  setModuleLoadVersion(`${Date.now()}`);
-  clearLayoutCache();
+  // Set build context so page modules can resolve content and hot-reload cleanly.
+  prepareBuildContext(config);
 
   // Scan and resolve routes
   const routes = await scanRoutes(config.pagesDir);

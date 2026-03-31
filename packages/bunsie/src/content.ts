@@ -2,23 +2,20 @@ import { join } from "node:path";
 import { Glob } from "bun";
 import type { ContentEntry } from "./types";
 
-const CONTENT_DIR_KEY = Symbol.for("bunsie.contentDir");
 const CONTENT_DIR_ENV_KEY = "BUNSIE_CONTENT_DIR";
-
-interface ContentDirState {
-  [CONTENT_DIR_KEY]?: string;
-}
-
-function getSharedContentDirState(): ContentDirState {
-  return globalThis as ContentDirState;
-}
+let activeContentDir: string | undefined;
 
 const MD_EXTENSION_REGEX = /\.md$/;
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 const UTF8_BOM = "\uFEFF";
 
+export function configureContentDir(dir: string) {
+  activeContentDir = dir;
+  process.env[CONTENT_DIR_ENV_KEY] = dir;
+}
+
 export function setContentDir(dir: string) {
-  getSharedContentDirState()[CONTENT_DIR_KEY] = dir;
+  configureContentDir(dir);
 }
 
 function resolveContentDir(override?: string): string {
@@ -26,7 +23,7 @@ function resolveContentDir(override?: string): string {
     return override;
   }
 
-  const configuredDir = getSharedContentDirState()[CONTENT_DIR_KEY];
+  const configuredDir = activeContentDir;
   if (configuredDir) {
     return configuredDir;
   }
