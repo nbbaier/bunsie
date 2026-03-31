@@ -36,7 +36,6 @@ export interface Route {
 }
 
 export interface ResolvedRoute {
-  module: PageModule;
   outputPath: string;
   params: Record<string, string>;
   props: Record<string, unknown>;

@@ -93,7 +93,6 @@ async function resolveDynamicRoute(
     validateDynamicParams(route, params);
     const outputPath = routeToOutputPath(route.urlPattern, params);
     resolved.push({
-      module: mod,
       route,
       params,
       props: props ?? {},
@@ -113,7 +112,6 @@ export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
     } else {
       const outputPath = routeToOutputPath(route.urlPattern);
       resolved.push({
-        module: mod,
         route,
         params: {},
         props: {},
