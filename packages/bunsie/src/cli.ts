@@ -12,9 +12,9 @@ const USAGE_MESSAGE =
 
 interface ParsedArgs {
   command: string | null;
-  root: string;
-  port: number;
   help: boolean;
+  port: number;
+  root: string;
 }
 
 function readOptionValue(input: string[], index: number, flag: string): string {
