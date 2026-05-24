@@ -25,106 +25,47 @@ bun add bunsie @kitajs/html
 
 ## Quick Start
 
+Scaffold a new site:
+
+```bash
+bunx bunsie init my-site
+cd my-site
+bun run dev
+```
+
+Or initialize in the current directory:
+
 ```bash
 mkdir my-site && cd my-site
-bun init -y
-bun add bunsie @kitajs/html
-mkdir -p pages/blog content/blog layouts public
-```
-
-Create or update `tsconfig.json`:
-
-```json
-{
-   "compilerOptions": {
-      "jsx": "react-jsx",
-      "jsxImportSource": "@kitajs/html",
-      "moduleResolution": "bundler",
-      "target": "esnext",
-      "module": "esnext"
-   }
-}
-```
-
-Create `pages/index.tsx`:
-
-```tsx
-export default function HomePage() {
-   return (
-      <div>
-         <h1>Hello from bunsie</h1>
-         <p>Static pages rendered from TSX.</p>
-      </div>
-   );
-}
-```
-
-Create `pages/blog/[slug].tsx`:
-
-```tsx
-import { getCollection, type StaticPath } from "bunsie";
-
-export async function getStaticPaths(): Promise<StaticPath[]> {
-   const posts = await getCollection("blog");
-   return posts.map((post) => ({
-      params: { slug: post.slug },
-      props: { frontmatter: post.frontmatter, html: post.html },
-   }));
-}
-
-export default function BlogPost(props: {
-   params: { slug: string };
-   frontmatter: Record<string, unknown>;
-   html: string;
-}) {
-   return (
-      <article>
-         <h1>{String(props.frontmatter.title ?? props.params.slug)}</h1>
-         <div>{props.html}</div>
-      </article>
-   );
-}
-```
-
-Create `content/blog/hello.md`:
-
-```markdown
----
-title: Hello World
-date: 2026-03-01
----
-
-This post is rendered from Markdown.
-```
-
-Run the development server:
-
-```bash
-bunx bunsie dev
+bunx bunsie init
+bun run dev
 ```
 
 Create a production build:
 
 ```bash
-bunx bunsie build
+bun run build
 ```
 
 ## CLI
 
 ```text
-Usage: bunsie <build|dev> [--root <path>] [--port <number>]
+Usage: bunsie <build|dev|init> [--root <path>] [--port <number>] [--name <name>] [--force]
 ```
 
 | Command        | Description                                                                                                           |
 | -------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `bunsie init`  | Scaffolds a new site, installs dependencies, and prints next steps.                                                   |
 | `bunsie build` | Builds the static site into `outDir` (`dist` by default).                                                             |
 | `bunsie dev`   | Runs an initial build, serves output on port `3000`, watches source directories, and triggers live reload on rebuild. |
 
-| Option            | Description                                                                     |
-| ----------------- | ------------------------------------------------------------------------------- |
-| `--root <path>`   | Sets the project root used to load `ssg.config.ts` and resolve all directories. |
-| `--port <number>` | Sets the dev server port (only valid with `bunsie dev`). Defaults to `3000`.    |
-| `--help`, `-h`    | Prints CLI usage.                                                               |
+| Option            | Description                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| `--root <path>`   | Project root for `build`/`dev`, or target directory for `init` when no positional path is given. |
+| `--port <number>` | Sets the dev server port (only valid with `bunsie dev`). Defaults to `3000`.                     |
+| `--name <name>`   | Package name for `bunsie init`. Defaults to the target directory name.                           |
+| `--force`         | Overwrite existing scaffold files when running `bunsie init`.                                    |
+| `--help`, `-h`    | Prints CLI usage.                                                                                |
 
 ## Project Structure
 
@@ -173,19 +114,19 @@ Example layout navigation:
 
 ```tsx
 import {
-  getRoutes,
-  isIndexRoute,
-  isTopLevelRoute,
-  type RouteInfo,
+   getRoutes,
+   isIndexRoute,
+   isTopLevelRoute,
+   type RouteInfo,
 } from "bunsie";
 
 function routeToLabel(route: RouteInfo): string {
-  if (isIndexRoute(route)) {
-    return "Home";
-  }
+   if (isIndexRoute(route)) {
+      return "Home";
+   }
 
-  const label = route.url.slice(1);
-  return label.charAt(0).toUpperCase() + label.slice(1);
+   const label = route.url.slice(1);
+   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export default function DefaultLayout({ children }: { children: string }) {

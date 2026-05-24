@@ -3,14 +3,15 @@ import { Glob } from "bun";
 import { loadModule } from "./module-loader";
 import type { PageModule, ResolvedRoute, Route, RouteInfo } from "./types";
 
+const ROUTES_ENV_KEY = "BUNSIE_ROUTES";
 let _routes: RouteInfo[] = [];
 const TSX_EXTENSION_REGEX = /\.tsx$/;
 const BACKSLASH_REGEX = /\\/g;
 const LEADING_SLASH_REGEX = /^\//;
 const PARAM_SEGMENT_REGEX = /\[(\w+)\]/g;
 
-export function setRoutes(resolved: ResolvedRoute[]) {
-  _routes = resolved.map((r) => {
+function toRouteInfo(resolved: ResolvedRoute[]): RouteInfo[] {
+  return resolved.map((r) => {
     const frontmatter = r.props.frontmatter as
       | Record<string, unknown>
       | undefined;
@@ -22,7 +23,31 @@ export function setRoutes(resolved: ResolvedRoute[]) {
   });
 }
 
+export function setRoutes(resolved: ResolvedRoute[]) {
+  _routes = toRouteInfo(resolved);
+  process.env[ROUTES_ENV_KEY] = JSON.stringify(_routes);
+}
+
 export function getRoutes(): RouteInfo[] {
+  if (_routes.length > 0) {
+    return _routes;
+  }
+
+  const envRoutes = process.env[ROUTES_ENV_KEY];
+  if (!envRoutes) {
+    return _routes;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(envRoutes);
+    if (!Array.isArray(parsed)) {
+      return _routes;
+    }
+    _routes = parsed as RouteInfo[];
+  } catch {
+    return _routes;
+  }
+
   return _routes;
 }
 

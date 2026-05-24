@@ -38,9 +38,7 @@ export default function DefaultLayout({ children }: { children: string }) {
       <body>
         <nav>
           {routes.map((r) => (
-            <a href={r.url} key={r.url}>
-              {routeToLabel(r)}
-            </a>
+            <a href={r.url}>{routeToLabel(r)}</a>
           ))}
         </nav>
         <main>{children}</main>

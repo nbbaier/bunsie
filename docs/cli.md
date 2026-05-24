@@ -16,23 +16,29 @@ bun add bunsie @kitajs/html
 ## CLI Surface
 
 ```text
-Usage: bunsie <build|dev> [--root <path>] [--port <number>]
+Usage: bunsie <build|dev|init> [--root <path>] [--port <number>] [--name <name>] [--force]
 ```
 
 | Command | Description                                                                              |
 | ------- | ---------------------------------------------------------------------------------------- |
+| `init`  | Scaffold a new site, run `bun install`, and print next steps.                            |
 | `build` | Build the site into the configured output directory.                                     |
 | `dev`   | Build once, serve output, watch source directories, and live-reload browsers on rebuild. |
 
-| Option            | Description                                                                                                                                                            |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--root <path>`   | Project root directory. Defaults to the current working directory. `ssg.config.ts` is loaded from this directory, and all configured directories are resolved from it. |
-| `--port <number>` | Dev server port. Defaults to `3000`. This option is only valid with `dev`.                                                                                             |
-| `--help`, `-h`    | Print usage and exit with status code `0`.                                                                                                                             |
+| Option            | Description                                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--root <path>`   | Project root directory for `build`/`dev`. For `init`, used when no positional directory argument is provided. Defaults to the current working directory. |
+| `--port <number>` | Dev server port. Defaults to `3000`. This option is only valid with `dev`.                                                                               |
+| `--name <name>`   | Package name for `init`. Defaults to a sanitized version of the target directory name.                                                                   |
+| `--force`         | Overwrite existing scaffold files during `init`.                                                                                                         |
+| `--help`, `-h`    | Print usage and exit with status code `0`.                                                                                                               |
 
 Examples:
 
 ```bash
+bunsie init my-site
+bunsie init --root ./my-site --name my-site
+bunsie init --force
 bunsie build
 bunsie dev
 bunsie build --root ./example
@@ -43,10 +49,28 @@ bunsie dev --port 8080
 If no command (or an unknown command) is provided, `bunsie` prints:
 
 ```text
-Usage: bunsie <build|dev> [--root <path>] [--port <number>]
+Usage: bunsie <build|dev|init> [--root <path>] [--port <number>] [--name <name>] [--force]
 ```
 
 and exits with status code `1`.
+
+## Init Command
+
+`bunsie init [directory]` creates a ready-to-run site with:
+
+- `package.json` with `bunsie` and `@kitajs/html` dependencies
+- `tsconfig.json` configured for `@kitajs/html` JSX
+- `ssg.config.ts` with default directory names
+- Example pages, layout, blog route, sample Markdown post, and base CSS
+- `.gitignore` for `node_modules/` and `dist/`
+
+Behavior:
+
+1. Creates the target directory if it does not exist.
+2. Refuses to scaffold when `package.json` or `ssg.config.ts` already exists, unless `--force` is passed.
+3. Skips individual files that already exist unless `--force` is passed.
+4. Runs `bun add bunsie @kitajs/html` in the target directory. If install fails, prints manual install instructions instead of exiting with an error.
+5. Prints next steps (`cd`, `bun run dev`, `bun run build`).
 
 ## Build Command
 
@@ -231,22 +255,16 @@ Helper exports:
 
 - `isIndexRoute(route)` returns `true` for `/`.
 - `isTopLevelRoute(route)` returns `true` for `/` and one-segment URLs like `/about`.
-Example:
+  Example:
 
 ```tsx
-import {
-   getRoutes,
-   isIndexRoute,
-   isTopLevelRoute,
-} from "bunsie";
+import { getRoutes, isIndexRoute, isTopLevelRoute } from "bunsie";
 
 const links = getRoutes()
    .filter(isTopLevelRoute)
    .map((route) => ({
       href: route.url,
-      label: isIndexRoute(route)
-         ? "Home"
-         : route.url.slice(1),
+      label: isIndexRoute(route) ? "Home" : route.url.slice(1),
    }));
 ```
 
@@ -286,14 +304,17 @@ await dev(config, 8080);
 
 ## Error Reference
 
-| Error                                                                        | Meaning                                                                    |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `Usage: bunsie <build\|dev> [--root <path>] [--port <number>]`               | Invalid or missing command.                                                |
-| `Unknown option: <option>`                                                   | CLI received an unsupported flag.                                          |
-| `Invalid port: <value>`                                                      | `--port` value is not an integer in the range `1-65535`.                   |
-| `--port can only be used with the dev command`                               | `--port` was passed to a non-`dev` command.                                |
-| `Dynamic route <pattern> must export getStaticPaths()`                       | Dynamic route file does not export `getStaticPaths()`.                     |
-| `Dynamic route <pattern> returned invalid params: missing or empty "<name>"` | `getStaticPaths()` returned a path with missing/invalid dynamic params.    |
-| `Invalid YAML frontmatter in <file>: <details>`                              | YAML frontmatter parsing failed.                                           |
-| `YAML frontmatter in <file> must parse to an object, got <type>`             | YAML parsed successfully but produced a non-object value.                  |
-| `Rebuild failed: ...`                                                        | Dev mode rebuild encountered an error and logged it; server keeps running. |
+| Error                                                                                          | Meaning                                                                    |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `Usage: bunsie <build\|dev\|init> [--root <path>] [--port <number>] [--name <name>] [--force]` | Invalid or missing command.                                                |
+| `Project already exists in <path> (...)`                                                       | `init` found existing project markers and `--force` was not passed.        |
+| `--name can only be used with the init command`                                                | `--name` was passed to a non-`init` command.                               |
+| `--force can only be used with the init command`                                               | `--force` was passed to a non-`init` command.                              |
+| `Unknown option: <option>`                                                                     | CLI received an unsupported flag.                                          |
+| `Invalid port: <value>`                                                                        | `--port` value is not an integer in the range `1-65535`.                   |
+| `--port can only be used with the dev command`                                                 | `--port` was passed to a non-`dev` command.                                |
+| `Dynamic route <pattern> must export getStaticPaths()`                                         | Dynamic route file does not export `getStaticPaths()`.                     |
+| `Dynamic route <pattern> returned invalid params: missing or empty "<name>"`                   | `getStaticPaths()` returned a path with missing/invalid dynamic params.    |
+| `Invalid YAML frontmatter in <file>: <details>`                                                | YAML frontmatter parsing failed.                                           |
+| `YAML frontmatter in <file> must parse to an object, got <type>`                               | YAML parsed successfully but produced a non-object value.                  |
+| `Rebuild failed: ...`                                                                          | Dev mode rebuild encountered an error and logged it; server keeps running. |

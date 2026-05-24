@@ -2,19 +2,23 @@
 import { build } from "./build";
 import { loadConfig } from "./config";
 import { dev } from "./dev";
+import { init } from "./init";
 
 const args = process.argv.slice(2);
 
 const DEFAULT_PORT = 3000;
 const HELP_FLAGS = new Set(["--help", "-h"]);
 const USAGE_MESSAGE =
-  "Usage: bunsie <build|dev> [--root <path>] [--port <number>]";
+  "Usage: bunsie <build|dev|init> [--root <path>] [--port <number>] [--name <name>] [--force]";
 
 interface ParsedArgs {
   command: string | null;
+  force: boolean;
   help: boolean;
+  name: string | undefined;
   port: number;
   root: string;
+  target: string | undefined;
 }
 
 function readOptionValue(input: string[], index: number, flag: string): string {
@@ -38,6 +42,9 @@ function parseArgs(input: string[]): ParsedArgs {
   let root = process.cwd();
   let port = DEFAULT_PORT;
   let help = false;
+  let force = false;
+  let name: string | undefined;
+  let target: string | undefined;
 
   for (let index = 0; index < input.length; index++) {
     const arg = input[index];
@@ -59,8 +66,24 @@ function parseArgs(input: string[]): ParsedArgs {
       continue;
     }
 
+    if (arg === "--name") {
+      name = readOptionValue(input, index, "--name");
+      index++;
+      continue;
+    }
+
+    if (arg === "--force") {
+      force = true;
+      continue;
+    }
+
     if (arg.startsWith("--")) {
       throw new Error(`Unknown option: ${arg}`);
+    }
+
+    if (command === "init" && !target) {
+      target = arg;
+      continue;
     }
 
     if (command) {
@@ -69,7 +92,7 @@ function parseArgs(input: string[]): ParsedArgs {
     command = arg;
   }
 
-  return { command, root, port, help };
+  return { command, root, port, help, force, name, target };
 }
 
 async function main() {
@@ -80,8 +103,29 @@ async function main() {
     process.exit(parsed.help ? 0 : 1);
   }
 
+  if (parsed.command === "init") {
+    await init({
+      targetDir: parsed.target ?? parsed.root,
+      name: parsed.name,
+      force: parsed.force,
+    });
+    return;
+  }
+
   if (parsed.command !== "dev" && parsed.port !== DEFAULT_PORT) {
     throw new Error("--port can only be used with the dev command");
+  }
+
+  if (parsed.name) {
+    throw new Error("--name can only be used with the init command");
+  }
+
+  if (parsed.force) {
+    throw new Error("--force can only be used with the init command");
+  }
+
+  if (parsed.target) {
+    throw new Error("Unexpected positional argument");
   }
 
   const config = await loadConfig(parsed.root);
