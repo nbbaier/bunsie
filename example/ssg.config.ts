@@ -1,9 +1,11 @@
 import type { SsgConfig } from "bunsie";
 
-export default {
+const config: Partial<SsgConfig> = {
   pagesDir: "pages",
   contentDir: "content",
   layoutsDir: "layouts",
   publicDir: "public",
   outDir: "dist",
-} satisfies Partial<SsgConfig>;
+};
+
+export default config;
