@@ -40,14 +40,9 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 - Handle errors appropriately in async code with try-catch blocks
 - Don't use async functions as Promise executors
 
-### React & JSX
+### JSX & HTML Output
 
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
 - Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
 - Use semantic HTML and ARIA attributes for accessibility:
    - Provide meaningful alt text for images
    - Use proper heading hierarchy
@@ -57,7 +52,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 ### Error Handling & Debugging
 
-- Remove `console.log`, `debugger`, and `alert` statements from production code
+- Remove `debugger` statements and leftover debug logging before committing — `console.log`/`console.error`/`console.warn` are fine when they're the CLI's actual user-facing output (build status, dev server messages, scaffolding results)
 - Throw `Error` objects with descriptive messages, not strings or other values
 - Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
 - Prefer early returns over nested conditionals for error cases
@@ -72,9 +67,9 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 ### Security
 
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
+- Add `rel="noopener"` when using `target="_blank"` on generated links
+- Escape or sanitize any content rendered into HTML (page content, frontmatter, user input) to avoid injecting unescaped markup
+- Don't use `eval()`
 - Validate and sanitize user input
 
 ### Performance
@@ -82,33 +77,9 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 - Avoid spread syntax in accumulators within loops
 - Use top-level regex literals instead of creating them in loops
 - Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
-
-### Framework-Specific Guidance
-
-**Next.js:**
-
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
-
-**React 19+:**
-
-- Use ref as a prop instead of `React.forwardRef`
-
-**Solid/Svelte/Vue/Qwik:**
-
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
+- Avoid barrel files that re-export everything for convenience — this doesn't include a package's actual entry point (e.g. `src/index.ts` as `main`)
 
 ---
-
-## Testing
-
-- Write assertions inside `it()` or `test()` blocks
-- Avoid done callbacks in async tests - use async/await instead
-- Don't use `.only` or `.skip` in committed code
-- Keep test suites reasonably flat - avoid excessive `describe` nesting
 
 ## When Biome Can't Help
 
@@ -124,3 +95,19 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 ---
 
 Most formatting and common issues are automatically fixed by Biome. Run `bun x ultracite fix` before committing to ensure compliance.
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (nbbaier/bunsie), managed via the `gh` CLI; external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — one `CONTEXT.md` and `docs/adr/` at the repo root (not yet created). See `docs/agents/domain.md`.
