@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Prepares a fresh Amp orb: installs workspace dependencies and builds the bunsie CLI
+# so `bun run build:example`, typecheck, and lint work immediately.
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+step() {
+  local label="$1"
+  shift
+  echo "==> ${label}"
+  local start=${SECONDS}
+  "$@"
+  echo "<== ${label} ($((SECONDS - start))s)"
+}
+
+if ! command -v bun >/dev/null 2>&1; then
+  step "Install Bun" bash -c 'curl -fsSL https://bun.sh/install | bash'
+  export PATH="${HOME}/.bun/bin:${PATH}"
+fi
+echo "bun $(bun --version)"
+
+step "bun install" bun install --frozen-lockfile
+step "Build bunsie CLI" bun run build:cli
