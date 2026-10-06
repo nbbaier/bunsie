@@ -5,11 +5,11 @@
 ## Features
 
 - File-based routing from `pages/**/*.tsx`
-- Dynamic routes with `[param]` segments and `getStaticPaths()`
+- Dynamic paths with `[param]` segments and `getStaticPaths()`
 - Markdown collections from `content/<collection>/*.md`
 - Layout components from `layouts/*.tsx`
-- Route metadata via `getRoutes()`
-- Route helper exports: `isIndexRoute` and `isTopLevelRoute`
+- Path metadata via `getPaths()`
+- Path helper exports: `isIndexPath` and `isTopLevelPath`
 - Live reload dev server over WebSocket
 - Optional `ssg.config.ts` with sensible defaults
 
@@ -86,42 +86,42 @@ export default {
 
 ## Content And Route APIs
 
-`bunsie` exports runtime helpers for content and route metadata:
+`bunsie` exports runtime helpers for content and path metadata:
 
 - `getCollection(name, contentDir?)`
 - `getEntry(name, slug, contentDir?)`
-- `getRoutes()`
-- `isIndexRoute(route)`
-- `isTopLevelRoute(route)`
+- `getPaths()`
+- `isIndexPath(path)`
+- `isTopLevelPath(path)`
 
 Example layout navigation:
 
 ```tsx
 import {
-   getRoutes,
-   isIndexRoute,
-   isTopLevelRoute,
-   type RouteInfo,
+   getPaths,
+   isIndexPath,
+   isTopLevelPath,
+   type PathInfo,
 } from "bunsie";
 
-function routeToLabel(route: RouteInfo): string {
-   if (isIndexRoute(route)) {
+function pathToLabel(path: PathInfo): string {
+   if (isIndexPath(path)) {
       return "Home";
    }
 
-   const label = route.url.slice(1);
+   const label = path.url.slice(1);
    return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export default function DefaultLayout({ children }: { children: string }) {
-   const routes = getRoutes().filter(isTopLevelRoute);
+   const paths = getPaths().filter(isTopLevelPath);
 
    return (
       <html lang="en">
          <body>
             <nav>
-               {routes.map((route) => (
-                  <a href={route.url}>{routeToLabel(route)}</a>
+               {paths.map((path) => (
+                  <a href={path.url}>{pathToLabel(path)}</a>
                ))}
             </nav>
             <main>{children}</main>

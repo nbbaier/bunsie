@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { resolveRoutes, scanRoutes } from "../src/router";
+import { resolvePaths, scanRoutes } from "../src/router";
 
 const DUPLICATE_PARAMS_ERROR = /blog\/hello\/index\.html.*\/blog\/\[slug\]/s;
 const STATIC_VS_DYNAMIC_ERROR =
@@ -36,10 +36,10 @@ async function writePage(file: string, source: string) {
 }
 
 function resolvePages() {
-  return scanRoutes(pagesDir).then(resolveRoutes);
+  return scanRoutes(pagesDir).then(resolvePaths);
 }
 
-describe("resolveRoutes output path collisions", () => {
+describe("resolvePaths output path collisions", () => {
   test("rejects getStaticPaths returning the same params twice", async () => {
     await writePage(
       "blog/[slug].tsx",
@@ -132,7 +132,7 @@ describe("resolveRoutes output path collisions", () => {
   });
 });
 
-describe("resolveRoutes dynamic route validation", () => {
+describe("resolvePaths dynamic route validation", () => {
   test("rejects a dynamic route that does not export getStaticPaths()", async () => {
     await writePage("blog/[slug].tsx", `export default () => "";`);
 

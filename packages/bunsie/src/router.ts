@@ -1,15 +1,15 @@
 import { join, posix } from "node:path";
 import { Glob } from "bun";
 import { loadModule } from "./module-loader";
-import type { PageModule, ResolvedRoute, Route, RouteInfo } from "./types";
+import type { PageModule, PathInfo, Route, RoutePath } from "./types";
 
 // Two copies of this package run during a build: the CLI executes the bundled
 // dist/cli.mjs, while user pages and layouts import "bunsie" from src/. Each copy
 // has its own module-level state, so anything the CLI sets for pages to read
-// (routes here, the content dir in content.ts) must also be written to
+// (paths here, the content dir in content.ts) must also be written to
 // process.env and read back from it. test/example-build.test.ts covers this.
-const ROUTES_ENV_KEY = "BUNSIE_ROUTES";
-let _routes: RouteInfo[] = [];
+const PATHS_ENV_KEY = "BUNSIE_PATHS";
+let _paths: PathInfo[] = [];
 const TSX_EXTENSION_REGEX = /\.tsx$/;
 const BACKSLASH_REGEX = /\\/g;
 const LEADING_SLASH_REGEX = /^\/+/;
@@ -18,7 +18,7 @@ const TRAILING_SLASHES_REGEX = /\/+$/;
 const PARENT_DIR_REGEX = /^\.\.(\/|$)/;
 const PARAM_SEGMENT_REGEX = /\[(\w+)\]/g;
 
-function toRouteInfo(resolved: ResolvedRoute[]): RouteInfo[] {
+function toPathInfo(resolved: RoutePath[]): PathInfo[] {
   return resolved.map((r) => {
     const frontmatter = r.props.frontmatter as
       | Record<string, unknown>
@@ -26,37 +26,37 @@ function toRouteInfo(resolved: ResolvedRoute[]): RouteInfo[] {
     return {
       frontmatter,
       params: r.params,
-      url: interpolateRoutePattern(r.route.urlPattern, r.params),
+      url: interpolateRoutePattern(r.route.pattern, r.params),
     };
   });
 }
 
-export function setRoutes(resolved: ResolvedRoute[]) {
-  _routes = toRouteInfo(resolved);
-  process.env[ROUTES_ENV_KEY] = JSON.stringify(_routes);
+export function setPaths(resolved: RoutePath[]) {
+  _paths = toPathInfo(resolved);
+  process.env[PATHS_ENV_KEY] = JSON.stringify(_paths);
 }
 
-export function getRoutes(): RouteInfo[] {
-  if (_routes.length > 0) {
-    return _routes;
+export function getPaths(): PathInfo[] {
+  if (_paths.length > 0) {
+    return _paths;
   }
 
-  const envRoutes = process.env[ROUTES_ENV_KEY];
-  if (!envRoutes) {
-    return _routes;
+  const envPaths = process.env[PATHS_ENV_KEY];
+  if (!envPaths) {
+    return _paths;
   }
 
   try {
-    const parsed: unknown = JSON.parse(envRoutes);
+    const parsed: unknown = JSON.parse(envPaths);
     if (!Array.isArray(parsed)) {
-      return _routes;
+      return _paths;
     }
-    _routes = parsed as RouteInfo[];
+    _paths = parsed as PathInfo[];
   } catch {
-    return _routes;
+    return _paths;
   }
 
-  return _routes;
+  return _paths;
 }
 
 export async function scanRoutes(pagesDir: string): Promise<Route[]> {
@@ -64,20 +64,20 @@ export async function scanRoutes(pagesDir: string): Promise<Route[]> {
   const routes: Route[] = [];
 
   for await (const file of glob.scan({ cwd: pagesDir })) {
-    const urlPattern = fileToUrlPattern(file);
-    const paramNames = extractParamNames(urlPattern);
+    const pattern = fileToRoutePattern(file);
+    const paramNames = extractParamNames(pattern);
     routes.push({
       filePath: join(pagesDir, file),
       isDynamic: paramNames.length > 0,
       paramNames,
-      urlPattern,
+      pattern,
     });
   }
 
-  return routes.sort((a, b) => a.urlPattern.localeCompare(b.urlPattern));
+  return routes.sort((a, b) => a.pattern.localeCompare(b.pattern));
 }
 
-function fileToUrlPattern(file: string): string {
+function fileToRoutePattern(file: string): string {
   let pattern = file
     .replace(TSX_EXTENSION_REGEX, "")
     .replace(BACKSLASH_REGEX, "/");
@@ -104,19 +104,19 @@ function validateDynamicParams(route: Route, params: Record<string, string>) {
     const value = params[paramName];
     if (typeof value !== "string" || value.length === 0) {
       throw new Error(
-        `Dynamic route ${route.urlPattern} returned invalid params: missing or empty "${paramName}"`
+        `Dynamic route ${route.pattern} returned invalid params: missing or empty "${paramName}"`
       );
     }
   }
 }
 
-async function resolveDynamicRoute(
+async function resolveDynamicPaths(
   route: Route,
   mod: PageModule
-): Promise<ResolvedRoute[]> {
+): Promise<RoutePath[]> {
   if (!mod.getStaticPaths) {
     throw new Error(
-      `Dynamic route ${route.urlPattern} must export getStaticPaths()`
+      `Dynamic route ${route.pattern} must export getStaticPaths()`
     );
   }
 
@@ -124,7 +124,7 @@ async function resolveDynamicRoute(
   return paths.map(({ params, props }) => {
     validateDynamicParams(route, params);
     return {
-      outputPath: routeToOutputPath(route.urlPattern, params),
+      outputPath: routeToOutputPath(route.pattern, params),
       params,
       props: props ?? {},
       route,
@@ -132,18 +132,18 @@ async function resolveDynamicRoute(
   });
 }
 
-export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
+export async function resolvePaths(routes: Route[]): Promise<RoutePath[]> {
   const perRoute = await Promise.all(
-    routes.map(async (route): Promise<ResolvedRoute[]> => {
+    routes.map(async (route): Promise<RoutePath[]> => {
       const mod = await loadModule<PageModule>(route.filePath);
 
       if (route.isDynamic) {
-        return resolveDynamicRoute(route, mod);
+        return resolveDynamicPaths(route, mod);
       }
 
       return [
         {
-          outputPath: routeToOutputPath(route.urlPattern),
+          outputPath: routeToOutputPath(route.pattern),
           params: {},
           props: {},
           route,
@@ -157,13 +157,13 @@ export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
   return resolved;
 }
 
-function assertUniqueOutputPaths(resolved: ResolvedRoute[]) {
-  const seen = new Map<string, ResolvedRoute>();
+function assertUniqueOutputPaths(resolved: RoutePath[]) {
+  const seen = new Map<string, RoutePath>();
   for (const entry of resolved) {
     const previous = seen.get(entry.outputPath);
     if (previous) {
       throw new Error(
-        `Output path collision: ${entry.outputPath} is produced by both ${previous.route.urlPattern} (${previous.route.filePath}) and ${entry.route.urlPattern} (${entry.route.filePath})`
+        `Output path collision: ${entry.outputPath} is produced by both ${previous.route.pattern} (${previous.route.filePath}) and ${entry.route.pattern} (${entry.route.filePath})`
       );
     }
     seen.set(entry.outputPath, entry);

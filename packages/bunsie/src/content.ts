@@ -3,7 +3,7 @@ import { Glob } from "bun";
 import type { ContentEntry } from "./types";
 
 // Mirrored to process.env so pages importing a separate copy of the package can
-// read it; see the comment on ROUTES_ENV_KEY in router.ts.
+// read it; see the comment on PATHS_ENV_KEY in router.ts.
 const CONTENT_DIR_ENV_KEY = "BUNSIE_CONTENT_DIR";
 let activeContentDir: string | undefined;
 

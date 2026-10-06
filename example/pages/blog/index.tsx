@@ -1,4 +1,4 @@
-import { getRoutes, type RouteInfo } from "bunsie";
+import { getPaths, type PathInfo } from "bunsie";
 
 const BLOG_POST_PREFIX = "/blog/";
 
@@ -15,25 +15,25 @@ function getDateValue(date: unknown): number {
   return parsed;
 }
 
-function isBlogPostRoute(route: RouteInfo): boolean {
+function isBlogPostPath(path: PathInfo): boolean {
   return (
-    route.url.startsWith(BLOG_POST_PREFIX) &&
-    typeof route.params.slug === "string"
+    path.url.startsWith(BLOG_POST_PREFIX) &&
+    typeof path.params.slug === "string"
   );
 }
 
-function getPostTitle(route: RouteInfo): string {
-  const title = route.frontmatter?.title;
+function getPostTitle(path: PathInfo): string {
+  const title = path.frontmatter?.title;
   if (typeof title === "string" && title.length > 0) {
     return title;
   }
 
-  return route.params.slug;
+  return path.params.slug;
 }
 
 export default function BlogIndexPage() {
-  const posts = getRoutes()
-    .filter(isBlogPostRoute)
+  const posts = getPaths()
+    .filter(isBlogPostPath)
     .sort((a, b) => {
       const byDate =
         getDateValue(b.frontmatter?.date) - getDateValue(a.frontmatter?.date);

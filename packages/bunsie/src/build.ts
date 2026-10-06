@@ -1,8 +1,8 @@
 import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { prepareBuildContext } from "./build-context";
-import { renderRoute } from "./render";
-import { resolveRoutes, scanRoutes, setRoutes } from "./router";
+import { renderPath } from "./render";
+import { resolvePaths, scanRoutes, setPaths } from "./router";
 import type { ResolvedConfig } from "./types";
 
 export async function build(config: ResolvedConfig) {
@@ -24,13 +24,13 @@ export async function build(config: ResolvedConfig) {
 
   // Scan and resolve routes
   const routes = await scanRoutes(config.pagesDir);
-  const resolved = await resolveRoutes(routes);
-  setRoutes(resolved);
+  const resolved = await resolvePaths(routes);
+  setPaths(resolved);
 
   // Render each route and write output
   await Promise.all(
     resolved.map(async (route) => {
-      const html = await renderRoute(route, config.layoutsDir);
+      const html = await renderPath(route, config.layoutsDir);
       const outPath = join(config.outDir, route.outputPath);
       await mkdir(join(outPath, ".."), { recursive: true });
       await Bun.write(outPath, html);

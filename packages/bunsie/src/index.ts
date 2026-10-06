@@ -3,17 +3,17 @@ export { build } from "./build";
 export { loadConfig } from "./config";
 export { getCollection, getEntry, setContentDir } from "./content";
 export { dev } from "./dev";
-export { isIndexRoute, isTopLevelRoute } from "./helpers";
-export { renderRoute } from "./render";
-export { getRoutes, resolveRoutes, scanRoutes } from "./router";
+export { isIndexPath, isTopLevelPath } from "./helpers";
+export { renderPath } from "./render";
+export { getPaths, resolvePaths, scanRoutes } from "./router";
 export type {
   ContentEntry,
   LayoutModule,
   PageModule,
+  PathInfo,
   ResolvedConfig,
-  ResolvedRoute,
   Route,
-  RouteInfo,
+  RoutePath,
   SsgConfig,
   StaticPath,
 } from "./types";

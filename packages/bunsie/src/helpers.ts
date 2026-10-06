@@ -1,6 +1,6 @@
-import type { RouteInfo } from "./types";
+import type { PathInfo } from "./types";
 
-export const isIndexRoute = (route: RouteInfo): boolean => route.url === "/";
+export const isIndexPath = (path: PathInfo): boolean => path.url === "/";
 
-export const isTopLevelRoute = (route: RouteInfo): boolean =>
-  route.url === "/" || route.url.split("/").filter(Boolean).length === 1;
+export const isTopLevelPath = (path: PathInfo): boolean =>
+  path.url === "/" || path.url.split("/").filter(Boolean).length === 1;

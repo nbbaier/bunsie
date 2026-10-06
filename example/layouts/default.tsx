@@ -1,22 +1,17 @@
-import {
-  getRoutes,
-  isIndexRoute,
-  isTopLevelRoute,
-  type RouteInfo,
-} from "bunsie";
+import { getPaths, isIndexPath, isTopLevelPath, type PathInfo } from "bunsie";
 
-function routeToLabel(route: RouteInfo): string {
-  if (isIndexRoute(route)) {
+function pathToLabel(path: PathInfo): string {
+  if (isIndexPath(path)) {
     return "Home";
   }
 
-  const label = route.url.slice(1);
+  const label = path.url.slice(1);
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export default function DefaultLayout({ children }: { children: string }) {
-  const routes = getRoutes()
-    .filter(isTopLevelRoute)
+  const paths = getPaths()
+    .filter(isTopLevelPath)
     .sort((a, b) => {
       if (a.url === "/") {
         return -1;
@@ -37,8 +32,8 @@ export default function DefaultLayout({ children }: { children: string }) {
       </head>
       <body>
         <nav>
-          {routes.map((r) => (
-            <a href={r.url}>{routeToLabel(r)}</a>
+          {paths.map((r) => (
+            <a href={r.url}>{pathToLabel(r)}</a>
           ))}
         </nav>
         <main>{children}</main>

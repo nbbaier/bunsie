@@ -34,7 +34,7 @@ A missing or unknown command, an option used with the wrong command, or any othe
 
 ## `build`
 
-Empties `outDir`, copies `publicDir` into it (skipped if missing), and writes one `index.html` per route: `/` → `index.html`, `/about` → `about/index.html`, `/blog/hello` → `blog/hello/index.html`.
+Empties `outDir`, copies `publicDir` into it (skipped if missing), and writes one `index.html` per path: `/` → `index.html`, `/about` → `about/index.html`, `/blog/hello` → `blog/hello/index.html`.
 
 ## `dev`
 
@@ -48,7 +48,7 @@ Builds once, then serves `outDir` and rebuilds when anything in `pagesDir`, `con
 
 | Directory  | Purpose                                             |
 | ---------- | --------------------------------------------------- |
-| `pages/`   | TSX page modules; file paths become route patterns. |
+| `pages/`   | TSX page modules; file paths become routes. |
 | `content/` | Markdown collections, one subdirectory each.        |
 | `layouts/` | TSX layout modules that wrap page HTML.             |
 | `public/`  | Static files copied as-is to output.                |
@@ -89,9 +89,9 @@ A page module default-exports a function returning an HTML string. It receives `
 
 Both functions accept an optional trailing `contentDir` argument for use outside a build.
 
-## Route metadata
+## Path metadata
 
-`getRoutes()` returns `{ url, params, frontmatter? }` for every built page, and is available while any page or layout renders. `frontmatter` is filled in when the route's props include one. `isIndexRoute` and `isTopLevelRoute` filter that list, e.g. for navigation; the [README](../README.md#content-and-route-apis) has a layout example.
+`getPaths()` returns `{ url, params, frontmatter? }` for every built path, and is available while any page or layout renders. `frontmatter` is filled in when the path's props include one. `isIndexPath` and `isTopLevelPath` filter that list, e.g. for navigation; the [README](../README.md#content-and-route-apis) has a layout example.
 
 ## Programmatic use
 

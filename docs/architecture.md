@@ -12,11 +12,11 @@ How `packages/bunsie/src` fits together. For user-facing behavior, see [`cli.md`
 | `build.ts`         | The build pipeline (below).                                                                           |
 | `build-context.ts` | Per-build setup: content dir, module cache-bust version, layout cache reset.                          |
 | `module-loader.ts` | `loadModule()`: `import()` with a `?v=<build>` query so rebuilds see fresh page/layout modules.       |
-| `router.ts`        | Scans `pages/`, resolves dynamic routes via `getStaticPaths()`, stores route metadata (`getRoutes`). |
+| `router.ts`        | Scans `pages/`, resolves dynamic routes via `getStaticPaths()`, stores path metadata (`getPaths`). |
 | `render.ts`        | Renders a page, wraps it in its layout (cached per build), falls back to a built-in HTML shell.       |
 | `content.ts`       | Markdown collections: frontmatter (`Bun.YAML`), body (`Bun.markdown`), `getCollection`/`getEntry`.    |
 | `dev.ts`           | Dev server: initial build, static serving from `outDir`, file watching, WebSocket live reload.         |
-| `helpers.ts`       | Small route predicates (`isIndexRoute`, `isTopLevelRoute`) re-exported for user layouts.              |
+| `helpers.ts`       | Small path predicates (`isIndexPath`, `isTopLevelPath`) re-exported for user layouts.              |
 | `index.ts`         | Public API that site pages import as `bunsie`.                                                        |
 | `types.ts`         | Shared types.                                                                                         |
 
@@ -26,16 +26,16 @@ How `packages/bunsie/src` fits together. For user-facing behavior, see [`cli.md`
 
 1. Recreate `outDir` and copy `publicDir` into it.
 2. `prepareBuildContext`: set the content dir, bump the module load version, clear the layout cache.
-3. `scanRoutes` → `resolveRoutes` (loads each page; dynamic pages run `getStaticPaths()`) → `setRoutes`.
-4. Render every resolved route in parallel and write `<route>/index.html`.
+3. `scanRoutes` → `resolvePaths` (loads each page; dynamic pages run `getStaticPaths()`) → `setPaths`.
+4. Render every path in parallel and write `<path>/index.html`.
 
-Route metadata is stored in step 3, before any page renders, so pages and layouts can call `getRoutes()`.
+Path metadata is stored in step 3, before any page renders, so pages and layouts can call `getPaths()`.
 
 `dev` runs the same `build` on startup and on every debounced file change, then tells connected browsers to reload.
 
 ## Two copies of the package
 
-At build time the CLI runs the bundled `dist/cli.mjs`, but site pages and layouts import `bunsie` from `src/` through the workspace link. The two copies do not share module-level variables. Any state the CLI sets for pages to read (routes, the content dir) is also written to `process.env` and read back from there; see the comment on `ROUTES_ENV_KEY` in `router.ts`. New state of that kind needs the same treatment.
+At build time the CLI runs the bundled `dist/cli.mjs`, but site pages and layouts import `bunsie` from `src/` through the workspace link. The two copies do not share module-level variables. Any state the CLI sets for pages to read (paths, the content dir) is also written to `process.env` and read back from there; see the comment on `PATHS_ENV_KEY` in `router.ts`. New state of that kind needs the same treatment.
 
 ## Testing
 

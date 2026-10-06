@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { loadModule } from "./module-loader";
-import type { LayoutModule, PageModule, ResolvedRoute } from "./types";
+import type { LayoutModule, PageModule, RoutePath } from "./types";
 
 const layoutCache = new Map<string, LayoutModule>();
 
@@ -38,8 +38,8 @@ ${children}
 </html>`;
 }
 
-export async function renderRoute(
-  resolved: ResolvedRoute,
+export async function renderPath(
+  resolved: RoutePath,
   layoutsDir: string
 ): Promise<string> {
   const mod = await loadModule<PageModule>(resolved.route.filePath);

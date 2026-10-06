@@ -32,17 +32,17 @@ export interface Route {
   filePath: string;
   isDynamic: boolean;
   paramNames: string[];
-  urlPattern: string;
+  pattern: string;
 }
 
-export interface ResolvedRoute {
+export interface RoutePath {
   outputPath: string;
   params: Record<string, string>;
   props: Record<string, unknown>;
   route: Route;
 }
 
-export interface RouteInfo {
+export interface PathInfo {
   frontmatter?: Record<string, unknown>;
   params: Record<string, string>;
   url: string;

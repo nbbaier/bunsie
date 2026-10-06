@@ -26,13 +26,13 @@ beforeAll(() => {
 });
 
 describe("example site build", () => {
-  test("layout nav lists top-level routes from getRoutes()", async () => {
+  test("layout nav lists top-level routes from getPaths()", async () => {
     const nav = (await readPage(".")).match(NAV_REGEX)?.[1] ?? "";
     expect(nav).toContain('href="/about"');
     expect(nav).toContain('href="/blog"');
   });
 
-  test("blog index lists posts from getRoutes()", async () => {
+  test("blog index lists posts from getPaths()", async () => {
     const html = await readPage("blog");
     expect(html).toContain('href="/blog/hello"');
   });

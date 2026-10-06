@@ -73,24 +73,24 @@ dist/
 
 function defaultLayout(title: string): string {
   return `import {
-  getRoutes,
-  isIndexRoute,
-  isTopLevelRoute,
-  type RouteInfo,
+  getPaths,
+  isIndexPath,
+  isTopLevelPath,
+  type PathInfo,
 } from "bunsie";
 
-function routeToLabel(route: RouteInfo): string {
-  if (isIndexRoute(route)) {
+function pathToLabel(path: PathInfo): string {
+  if (isIndexPath(path)) {
     return "Home";
   }
 
-  const label = route.url.slice(1);
+  const label = path.url.slice(1);
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export default function DefaultLayout({ children }: { children: string }) {
-  const routes = getRoutes()
-    .filter(isTopLevelRoute)
+  const paths = getPaths()
+    .filter(isTopLevelPath)
     .sort((a, b) => {
       if (a.url === "/") {
         return -1;
@@ -111,8 +111,8 @@ export default function DefaultLayout({ children }: { children: string }) {
       </head>
       <body>
         <nav>
-          {routes.map((route) => (
-            <a href={route.url}>{routeToLabel(route)}</a>
+          {paths.map((path) => (
+            <a href={path.url}>{pathToLabel(path)}</a>
           ))}
         </nav>
         <main>{children}</main>
@@ -151,7 +151,7 @@ function aboutPage(): string {
 }
 
 function blogIndexPage(): string {
-  return `import { getRoutes, type RouteInfo } from "bunsie";
+  return `import { getPaths, type PathInfo } from "bunsie";
 
 const BLOG_POST_PREFIX = "/blog/";
 
@@ -168,25 +168,25 @@ function getDateValue(date: unknown): number {
   return parsed;
 }
 
-function isBlogPostRoute(route: RouteInfo): boolean {
+function isBlogPostPath(path: PathInfo): boolean {
   return (
-    route.url.startsWith(BLOG_POST_PREFIX) &&
-    typeof route.params.slug === "string"
+    path.url.startsWith(BLOG_POST_PREFIX) &&
+    typeof path.params.slug === "string"
   );
 }
 
-function getPostTitle(route: RouteInfo): string {
-  const title = route.frontmatter?.title;
+function getPostTitle(path: PathInfo): string {
+  const title = path.frontmatter?.title;
   if (typeof title === "string" && title.length > 0) {
     return title;
   }
 
-  return route.params.slug;
+  return path.params.slug;
 }
 
 export default function BlogIndexPage() {
-  const posts = getRoutes()
-    .filter(isBlogPostRoute)
+  const posts = getPaths()
+    .filter(isBlogPostPath)
     .sort((a, b) => {
       const byDate =
         getDateValue(b.frontmatter?.date) - getDateValue(a.frontmatter?.date);
