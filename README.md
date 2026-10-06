@@ -49,7 +49,7 @@ bun run build
 
 ## CLI
 
-`init` scaffolds a site, `build` writes it to `dist/`, and `dev` serves it with live reload. Options and behavior are in [`docs/cli.md`](docs/cli.md).
+`init` scaffolds a site, `build` writes it to `outDir` (`dist/` by default), and `dev` serves it with live reload. Options and behavior are in [`docs/cli.md`](docs/cli.md).
 
 ## Project Structure
 
