@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { Glob } from "bun";
 import { loadModule } from "./module-loader";
 import type { PageModule, ResolvedRoute, Route, RouteInfo } from "./types";
@@ -12,7 +12,10 @@ const ROUTES_ENV_KEY = "BUNSIE_ROUTES";
 let _routes: RouteInfo[] = [];
 const TSX_EXTENSION_REGEX = /\.tsx$/;
 const BACKSLASH_REGEX = /\\/g;
-const LEADING_SLASH_REGEX = /^\//;
+const LEADING_SLASH_REGEX = /^\/+/;
+const CURRENT_DIR_REGEX = /^\.$/;
+const TRAILING_SLASHES_REGEX = /\/+$/;
+const PARENT_DIR_REGEX = /^\.\.(\/|$)/;
 const PARAM_SEGMENT_REGEX = /\[(\w+)\]/g;
 
 function toRouteInfo(resolved: ResolvedRoute[]): RouteInfo[] {
@@ -171,10 +174,20 @@ function routeToOutputPath(
   pattern: string,
   params?: Record<string, string>
 ): string {
-  const path = interpolateRoutePattern(pattern, params).replace(
-    LEADING_SLASH_REGEX,
-    ""
-  );
+  const path = posix
+    .normalize(
+      interpolateRoutePattern(pattern, params)
+        .replace(BACKSLASH_REGEX, "/")
+        .replace(LEADING_SLASH_REGEX, "")
+    )
+    .replace(TRAILING_SLASHES_REGEX, "")
+    .replace(CURRENT_DIR_REGEX, "");
+
+  if (PARENT_DIR_REGEX.test(path)) {
+    throw new Error(
+      `Route ${pattern} resolves to "${path}", outside the output directory`
+    );
+  }
 
   if (path === "") {
     return "index.html";
