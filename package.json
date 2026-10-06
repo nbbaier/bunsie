@@ -14,7 +14,7 @@
     "clean:cli": "bun run --filter=bunsie clean",
     "fix": "ultracite fix",
     "test": "bun test",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
