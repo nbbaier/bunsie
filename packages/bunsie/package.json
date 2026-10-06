@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "bun run build:cli",
-    "build:cli": "tsdown src/cli.ts --format esm --platform node --external bun --out-dir dist --clean && chmod +x dist/cli.mjs",
+    "build:cli": "tsdown src/cli.ts --format esm --platform node --deps.never-bundle bun --no-dts --out-dir dist --clean && chmod +x dist/cli.mjs",
     "clean": "rm -rf dist"
   },
   "dependencies": {
