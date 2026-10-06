@@ -13,6 +13,8 @@ const MISSING_GET_STATIC_PATHS_ERROR =
   /\/blog\/\[slug\].*must export getStaticPaths\(\)/s;
 const INVALID_PARAMS_ERROR =
   /\/blog\/\[slug\] returned invalid params: missing or empty "slug"/;
+const NORMALIZED_COLLISION_ERROR = /blog\/b\/index\.html.*\/blog\/\[slug\]/s;
+const ESCAPES_OUT_DIR_ERROR = /\/blog\/\[slug\].*outside the output directory/s;
 
 let pagesDir: string;
 
@@ -66,6 +68,19 @@ describe("resolveRoutes output path collisions", () => {
     await expect(resolvePages()).rejects.toThrow(FILE_VS_INDEX_ERROR);
   });
 
+  test("rejects params whose paths normalize to the same output", async () => {
+    await writePage(
+      "blog/[slug].tsx",
+      `export const getStaticPaths = () => [
+        { params: { slug: "a/../b" } },
+        { params: { slug: "b" } },
+      ];
+      export default () => "";`
+    );
+
+    await expect(resolvePages()).rejects.toThrow(NORMALIZED_COLLISION_ERROR);
+  });
+
   test("accepts distinct output paths", async () => {
     await writePage("index.tsx", `export default () => "";`);
     await writePage(
@@ -109,6 +124,19 @@ describe("resolveRoutes dynamic route validation", () => {
       );
 
       await expect(resolvePages()).rejects.toThrow(INVALID_PARAMS_ERROR);
+    }
+  );
+
+  test.each([["../../escape"], ["../../.."]])(
+    "rejects param %p resolving outside the output directory",
+    async (slug) => {
+      await writePage(
+        "blog/[slug].tsx",
+        `export const getStaticPaths = () => [{ params: { slug: ${JSON.stringify(slug)} } }];
+      export default () => "";`
+      );
+
+      await expect(resolvePages()).rejects.toThrow(ESCAPES_OUT_DIR_ERROR);
     }
   );
 });
