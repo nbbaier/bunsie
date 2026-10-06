@@ -357,10 +357,7 @@ function sanitizePackageName(input: string): string {
   return normalized.length > 0 ? normalized : "bunsie-site";
 }
 
-export function resolveInitName(
-  name: string | undefined,
-  targetDir: string
-): string {
+function resolveInitName(name: string | undefined, targetDir: string): string {
   if (name) {
     return sanitizePackageName(name);
   }

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "example": {
+      // bunsie loads these by convention, so nothing imports them.
+      "entry": ["pages/**/*.tsx", "layouts/**/*.tsx", "ssg.config.ts"]
+    }
+  }
+}

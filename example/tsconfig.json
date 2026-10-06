@@ -2,6 +2,8 @@
   "extends": "../tsconfig.json",
   "include": ["pages", "layouts", "ssg.config.ts"],
   "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@kitajs/html",
     "strictNullChecks": true
   }
 }

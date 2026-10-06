@@ -152,7 +152,7 @@ export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
   return perRoute.flat();
 }
 
-export function routeToOutputPath(
+function routeToOutputPath(
   pattern: string,
   params?: Record<string, string>
 ): string {

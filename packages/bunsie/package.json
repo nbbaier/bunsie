@@ -11,10 +11,10 @@
     "build:cli": "tsdown src/cli.ts --format esm --platform node --deps.never-bundle bun --no-dts --out-dir dist --clean && chmod +x dist/cli.mjs",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@kitajs/html": "^4.2.13"
-  },
   "devDependencies": {
     "tsdown": "^0.23.0"
+  },
+  "peerDependencies": {
+    "@kitajs/html": "^4"
   }
 }
