@@ -9,6 +9,10 @@ const STATIC_VS_DYNAMIC_ERROR =
   /blog\/hello\/index\.html.*(\/blog\/hello.*\/blog\/\[slug\]|\/blog\/\[slug\].*\/blog\/hello)/s;
 const FILE_VS_INDEX_ERROR =
   /about\/index\.html.*(about\.tsx.*about\/index\.tsx|about\/index\.tsx.*about\.tsx)/s;
+const MISSING_GET_STATIC_PATHS_ERROR =
+  /\/blog\/\[slug\].*must export getStaticPaths\(\)/s;
+const INVALID_PARAMS_ERROR =
+  /\/blog\/\[slug\] returned invalid params: missing or empty "slug"/;
 
 let pagesDir: string;
 
@@ -80,4 +84,31 @@ describe("resolveRoutes output path collisions", () => {
       "index.html",
     ]);
   });
+});
+
+describe("resolveRoutes dynamic route validation", () => {
+  test("rejects a dynamic route that does not export getStaticPaths()", async () => {
+    await writePage("blog/[slug].tsx", `export default () => "";`);
+
+    await expect(resolvePages()).rejects.toThrow(
+      MISSING_GET_STATIC_PATHS_ERROR
+    );
+  });
+
+  test.each([
+    ["an empty string", `{ slug: "" }`],
+    ["a non-string value", "{ slug: 42 }"],
+    ["a missing key", "{}"],
+  ])(
+    "rejects getStaticPaths returning %s for a param",
+    async (_label, params) => {
+      await writePage(
+        "blog/[slug].tsx",
+        `export const getStaticPaths = () => [{ params: ${params} }];
+      export default () => "";`
+      );
+
+      await expect(resolvePages()).rejects.toThrow(INVALID_PARAMS_ERROR);
+    }
+  );
 });
