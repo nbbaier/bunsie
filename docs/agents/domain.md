@@ -18,7 +18,7 @@ Single-context layout (this repo):
 /
 ├── GLOSSARY.md
 ├── docs/adr/
-└── src/
+└── packages/bunsie/src/
 ```
 
 ## Use the glossary's vocabulary
