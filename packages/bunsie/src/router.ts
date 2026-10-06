@@ -149,7 +149,22 @@ export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
     })
   );
 
-  return perRoute.flat();
+  const resolved = perRoute.flat();
+  assertUniqueOutputPaths(resolved);
+  return resolved;
+}
+
+function assertUniqueOutputPaths(resolved: ResolvedRoute[]) {
+  const seen = new Map<string, ResolvedRoute>();
+  for (const entry of resolved) {
+    const previous = seen.get(entry.outputPath);
+    if (previous) {
+      throw new Error(
+        `Output path collision: ${entry.outputPath} is produced by both ${previous.route.urlPattern} (${previous.route.filePath}) and ${entry.route.urlPattern} (${entry.route.filePath})`
+      );
+    }
+    seen.set(entry.outputPath, entry);
+  }
 }
 
 function routeToOutputPath(
