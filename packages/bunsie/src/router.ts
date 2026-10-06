@@ -3,6 +3,11 @@ import { Glob } from "bun";
 import { loadModule } from "./module-loader";
 import type { PageModule, ResolvedRoute, Route, RouteInfo } from "./types";
 
+// Two copies of this package run during a build: the CLI executes the bundled
+// dist/cli.mjs, while user pages and layouts import "bunsie" from src/. Each copy
+// has its own module-level state, so anything the CLI sets for pages to read
+// (routes here, the content dir in content.ts) must also be written to
+// process.env and read back from it. test/example-build.test.ts covers this.
 const ROUTES_ENV_KEY = "BUNSIE_ROUTES";
 let _routes: RouteInfo[] = [];
 const TSX_EXTENSION_REGEX = /\.tsx$/;
