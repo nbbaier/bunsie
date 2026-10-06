@@ -65,18 +65,20 @@ function splitFrontmatter(
     return { frontmatter: {}, markdown: text };
   }
 
-  const yamlBlock = match[1];
+  const [frontmatterBlock, yamlBlock] = match;
   let parsed: unknown;
   try {
     parsed = Bun.YAML.parse(yamlBlock);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid YAML frontmatter in ${filePath}: ${message}`);
+    throw new Error(`Invalid YAML frontmatter in ${filePath}: ${message}`, {
+      cause: error,
+    });
   }
 
   return {
     frontmatter: normalizeFrontmatter(parsed, filePath),
-    markdown: text.slice(match[0].length),
+    markdown: text.slice(frontmatterBlock.length),
   };
 }
 

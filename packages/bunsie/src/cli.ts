@@ -46,7 +46,7 @@ function parseArgs(input: string[]): ParsedArgs {
   let name: string | undefined;
   let target: string | undefined;
 
-  for (let index = 0; index < input.length; index++) {
+  for (let index = 0; index < input.length; index += 1) {
     const arg = input[index];
 
     if (HELP_FLAGS.has(arg)) {
@@ -56,19 +56,19 @@ function parseArgs(input: string[]): ParsedArgs {
 
     if (arg === "--root") {
       root = readOptionValue(input, index, "--root");
-      index++;
+      index += 1;
       continue;
     }
 
     if (arg === "--port") {
       port = parsePort(readOptionValue(input, index, "--port"));
-      index++;
+      index += 1;
       continue;
     }
 
     if (arg === "--name") {
       name = readOptionValue(input, index, "--name");
-      index++;
+      index += 1;
       continue;
     }
 

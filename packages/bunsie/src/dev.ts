@@ -144,12 +144,12 @@ export async function dev(config: ResolvedConfig, port = 3000) {
   const clients = new Set<ServerWebSocket<unknown>>();
 
   const server = Bun.serve({
-    fetch(req, server) {
+    fetch(req, httpServer) {
       const url = new URL(req.url);
 
       // WebSocket upgrade
       if (url.pathname === "/__ws") {
-        if (server.upgrade(req)) {
+        if (httpServer.upgrade(req)) {
           return;
         }
         return new Response("WebSocket upgrade failed", { status: 400 });
