@@ -19,7 +19,6 @@ beforeAll(() => {
     stdout: "pipe",
   });
   if (result.exitCode !== 0) {
-    // "bunsie: command not found" means example/node_modules is missing: run `bun install`.
     throw new Error(
       `build:example failed:\n${result.stdout.toString()}${result.stderr.toString()}`
     );
