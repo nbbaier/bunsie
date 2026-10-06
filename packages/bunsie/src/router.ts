@@ -14,6 +14,7 @@ const TSX_EXTENSION_REGEX = /\.tsx$/;
 const BACKSLASH_REGEX = /\\/g;
 const LEADING_SLASH_REGEX = /^\//;
 const CURRENT_DIR_REGEX = /^\.$/;
+const TRAILING_SLASHES_REGEX = /\/+$/;
 const PARENT_DIR_REGEX = /^\.\.(\/|$)/;
 const PARAM_SEGMENT_REGEX = /\[(\w+)\]/g;
 
@@ -175,8 +176,11 @@ function routeToOutputPath(
 ): string {
   const path = posix
     .normalize(
-      interpolateRoutePattern(pattern, params).replace(LEADING_SLASH_REGEX, "")
+      interpolateRoutePattern(pattern, params)
+        .replace(BACKSLASH_REGEX, "/")
+        .replace(LEADING_SLASH_REGEX, "")
     )
+    .replace(TRAILING_SLASHES_REGEX, "")
     .replace(CURRENT_DIR_REGEX, "");
 
   if (PARENT_DIR_REGEX.test(path)) {
