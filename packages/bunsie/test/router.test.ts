@@ -17,6 +17,7 @@ const NORMALIZED_COLLISION_ERROR = /blog\/b\/index\.html.*\/blog\/\[slug\]/s;
 const ESCAPES_OUT_DIR_ERROR = /\/blog\/\[slug\].*outside the output directory/s;
 const TRAILING_SLASH_COLLISION_ERROR =
   /blog\/foo\/index\.html.*\/blog\/\[slug\]/s;
+const LEADING_SLASH_COLLISION_ERROR = /foo\/index\.html.*\/\[slug\]/s;
 
 let pagesDir: string;
 
@@ -96,6 +97,19 @@ describe("resolveRoutes output path collisions", () => {
     await expect(resolvePages()).rejects.toThrow(
       TRAILING_SLASH_COLLISION_ERROR
     );
+  });
+
+  test("rejects params differing only by a leading slash", async () => {
+    await writePage(
+      "[slug].tsx",
+      `export const getStaticPaths = () => [
+        { params: { slug: "foo" } },
+        { params: { slug: "/foo" } },
+      ];
+      export default () => "";`
+    );
+
+    await expect(resolvePages()).rejects.toThrow(LEADING_SLASH_COLLISION_ERROR);
   });
 
   test("accepts distinct output paths", async () => {
