@@ -49,23 +49,7 @@ bun run build
 
 ## CLI
 
-```text
-Usage: bunsie <build|dev|init> [--root <path>] [--port <number>] [--name <name>] [--force]
-```
-
-| Command        | Description                                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `bunsie init`  | Scaffolds a new site, installs dependencies, and prints next steps.                                                   |
-| `bunsie build` | Builds the static site into `outDir` (`dist` by default).                                                             |
-| `bunsie dev`   | Runs an initial build, serves output on port `3000`, watches source directories, and triggers live reload on rebuild. |
-
-| Option            | Description                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------ |
-| `--root <path>`   | Project root for `build`/`dev`, or target directory for `init` when no positional path is given. |
-| `--port <number>` | Sets the dev server port (only valid with `bunsie dev`). Defaults to `3000`.                     |
-| `--name <name>`   | Package name for `bunsie init`. Defaults to the target directory name.                           |
-| `--force`         | Overwrite existing scaffold files when running `bunsie init`.                                    |
-| `--help`, `-h`    | Prints CLI usage.                                                                                |
+`init` scaffolds a site, `build` writes it to `dist/`, and `dev` serves it with live reload. Options and behavior are in [`docs/cli.md`](docs/cli.md).
 
 ## Project Structure
 
@@ -161,6 +145,7 @@ bun install
 bun run check
 bun run fix
 bun run typecheck
+bun run test
 bun run build:cli
 bun run build:example
 ```
@@ -174,7 +159,8 @@ bun run --filter=example build
 
 ## Documentation
 
-Full CLI and API reference: [`docs/cli.md`](docs/cli.md)
+- CLI and API reference: [`docs/cli.md`](docs/cli.md)
+- How the source fits together: [`docs/architecture.md`](docs/architecture.md)
 
 ## License
 

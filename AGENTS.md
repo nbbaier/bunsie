@@ -101,6 +101,7 @@ Most formatting and common issues are automatically fixed by Biome. Run `bun x u
 ## Working in this repo
 
 - Verify changes with `bun run check && bun run typecheck && bun run test` (CI runs the same). `bun run test` builds `example/` through the bundled CLI.
+- Module map and build pipeline: `docs/architecture.md`. Read it before exploring `packages/bunsie/src`.
 - Before adding module-level state in `packages/bunsie/src` that pages or layouts read, see the comment on `ROUTES_ENV_KEY` in `router.ts`: the CLI and the pages load separate copies of the package.
 
 ---
