@@ -52,7 +52,7 @@ Builds once, then serves `outDir` and rebuilds when anything in `pagesDir`, `con
 | `content/` | Markdown collections, one subdirectory each.        |
 | `layouts/` | TSX layout modules that wrap page HTML.             |
 | `public/`  | Static files copied as-is to output.                |
-| `dist/`    | Build output.                                       |
+| `dist/`    | Build output (`outDir`, default `dist/`).           |
 
 ## Configuration
 
