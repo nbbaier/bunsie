@@ -7,6 +7,8 @@ import { resolveRoutes, scanRoutes } from "../src/router";
 const DUPLICATE_PARAMS_ERROR = /blog\/hello\/index\.html.*\/blog\/\[slug\]/s;
 const STATIC_VS_DYNAMIC_ERROR =
   /blog\/hello\/index\.html.*(\/blog\/hello.*\/blog\/\[slug\]|\/blog\/\[slug\].*\/blog\/hello)/s;
+const FILE_VS_INDEX_ERROR =
+  /about\/index\.html.*(about\.tsx.*about\/index\.tsx|about\/index\.tsx.*about\.tsx)/s;
 
 let pagesDir: string;
 
@@ -51,6 +53,13 @@ describe("resolveRoutes output path collisions", () => {
     );
 
     await expect(resolvePages()).rejects.toThrow(STATIC_VS_DYNAMIC_ERROR);
+  });
+
+  test("rejects pages/about.tsx clashing with pages/about/index.tsx", async () => {
+    await writePage("about.tsx", `export default () => "";`);
+    await writePage("about/index.tsx", `export default () => "";`);
+
+    await expect(resolvePages()).rejects.toThrow(FILE_VS_INDEX_ERROR);
   });
 
   test("accepts distinct output paths", async () => {
