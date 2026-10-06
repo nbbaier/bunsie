@@ -12,9 +12,9 @@
     "build:cli": "tsdown src/cli.ts --format esm --platform node --external bun --out-dir dist --clean && chmod +x dist/cli.mjs"
   },
   "dependencies": {
-    "@kitajs/html": "^4"
+    "@kitajs/html": "^4.2.13"
   },
   "devDependencies": {
-    "tsdown": "^0.20.3"
+    "tsdown": "^0.23.0"
   }
 }

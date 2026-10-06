@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "bunsie": "workspace:*",
-    "@kitajs/html": "^4"
+    "@kitajs/html": "^4.2.13"
   }
 }
