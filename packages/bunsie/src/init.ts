@@ -341,15 +341,10 @@ function fileExists(path: string): Promise<boolean> {
 }
 
 async function findExistingMarkers(targetDir: string): Promise<string[]> {
-  const existing: string[] = [];
-
-  for (const marker of MARKER_FILES) {
-    if (await fileExists(join(targetDir, marker))) {
-      existing.push(marker);
-    }
-  }
-
-  return existing;
+  const exists = await Promise.all(
+    MARKER_FILES.map((marker) => fileExists(join(targetDir, marker)))
+  );
+  return MARKER_FILES.filter((_, index) => exists[index]);
 }
 
 function sanitizePackageName(input: string): string {
@@ -388,19 +383,20 @@ export async function init(options: InitOptions): Promise<void> {
   await mkdir(targetDir, { recursive: true });
 
   const files = getScaffoldFiles(name);
-  const written: string[] = [];
+  const results = await Promise.all(
+    files.map(async (file) => {
+      const filePath = join(targetDir, file.path);
 
-  for (const file of files) {
-    const filePath = join(targetDir, file.path);
+      if (!options.force && (await fileExists(filePath))) {
+        return null;
+      }
 
-    if (!options.force && (await fileExists(filePath))) {
-      continue;
-    }
-
-    await mkdir(join(filePath, ".."), { recursive: true });
-    await writeFile(filePath, file.content, "utf8");
-    written.push(file.path);
-  }
+      await mkdir(join(filePath, ".."), { recursive: true });
+      await writeFile(filePath, file.content, "utf8");
+      return file.path;
+    })
+  );
+  const written = results.filter((path) => path !== null);
 
   if (written.length === 0) {
     throw new Error(`No scaffold files were written to ${targetDir}`);

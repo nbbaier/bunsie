@@ -28,15 +28,17 @@ export async function build(config: ResolvedConfig) {
   setRoutes(resolved);
 
   // Render each route and write output
-  let count = 0;
-  for (const route of resolved) {
-    const html = await renderRoute(route, config.layoutsDir);
-    const outPath = join(config.outDir, route.outputPath);
-    await mkdir(join(outPath, ".."), { recursive: true });
-    await Bun.write(outPath, html);
-    count++;
-  }
+  await Promise.all(
+    resolved.map(async (route) => {
+      const html = await renderRoute(route, config.layoutsDir);
+      const outPath = join(config.outDir, route.outputPath);
+      await mkdir(join(outPath, ".."), { recursive: true });
+      await Bun.write(outPath, html);
+    })
+  );
 
   const elapsed = (performance.now() - start).toFixed(0);
-  console.log(`Built ${count} pages in ${elapsed}ms → ${config.outDir}`);
+  console.log(
+    `Built ${resolved.length} pages in ${elapsed}ms → ${config.outDir}`
+  );
 }

@@ -109,9 +109,8 @@ function validateDynamicParams(route: Route, params: Record<string, string>) {
 
 async function resolveDynamicRoute(
   route: Route,
-  mod: PageModule,
-  resolved: ResolvedRoute[]
-) {
+  mod: PageModule
+): Promise<ResolvedRoute[]> {
   if (!mod.getStaticPaths) {
     throw new Error(
       `Dynamic route ${route.urlPattern} must export getStaticPaths()`
@@ -119,38 +118,38 @@ async function resolveDynamicRoute(
   }
 
   const paths = await mod.getStaticPaths();
-  for (const { params, props } of paths) {
+  return paths.map(({ params, props }) => {
     validateDynamicParams(route, params);
-    const outputPath = routeToOutputPath(route.urlPattern, params);
-    resolved.push({
-      outputPath,
+    return {
+      outputPath: routeToOutputPath(route.urlPattern, params),
       params,
       props: props ?? {},
       route,
-    });
-  }
+    };
+  });
 }
 
 export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
-  const resolved: ResolvedRoute[] = [];
+  const perRoute = await Promise.all(
+    routes.map(async (route): Promise<ResolvedRoute[]> => {
+      const mod = await loadModule<PageModule>(route.filePath);
 
-  for (const route of routes) {
-    const mod = await loadModule<PageModule>(route.filePath);
+      if (route.isDynamic) {
+        return resolveDynamicRoute(route, mod);
+      }
 
-    if (route.isDynamic) {
-      await resolveDynamicRoute(route, mod, resolved);
-    } else {
-      const outputPath = routeToOutputPath(route.urlPattern);
-      resolved.push({
-        outputPath,
-        params: {},
-        props: {},
-        route,
-      });
-    }
-  }
+      return [
+        {
+          outputPath: routeToOutputPath(route.urlPattern),
+          params: {},
+          props: {},
+          route,
+        },
+      ];
+    })
+  );
 
-  return resolved;
+  return perRoute.flat();
 }
 
 export function routeToOutputPath(
