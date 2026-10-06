@@ -3,6 +3,11 @@ import { Glob } from "bun";
 import { loadModule } from "./module-loader";
 import type { PageModule, ResolvedRoute, Route, RouteInfo } from "./types";
 
+// Two copies of this package run during a build: the CLI executes the bundled
+// dist/cli.mjs, while user pages and layouts import "bunsie" from src/. Each copy
+// has its own module-level state, so anything the CLI sets for pages to read
+// (routes here, the content dir in content.ts) must also be written to
+// process.env and read back from it. test/example-build.test.ts covers this.
 const ROUTES_ENV_KEY = "BUNSIE_ROUTES";
 let _routes: RouteInfo[] = [];
 const TSX_EXTENSION_REGEX = /\.tsx$/;
@@ -16,9 +21,9 @@ function toRouteInfo(resolved: ResolvedRoute[]): RouteInfo[] {
       | Record<string, unknown>
       | undefined;
     return {
-      url: interpolateRoutePattern(r.route.urlPattern, r.params),
-      params: r.params,
       frontmatter,
+      params: r.params,
+      url: interpolateRoutePattern(r.route.urlPattern, r.params),
     };
   });
 }
@@ -60,9 +65,9 @@ export async function scanRoutes(pagesDir: string): Promise<Route[]> {
     const paramNames = extractParamNames(urlPattern);
     routes.push({
       filePath: join(pagesDir, file),
-      urlPattern,
       isDynamic: paramNames.length > 0,
       paramNames,
+      urlPattern,
     });
   }
 
@@ -104,9 +109,8 @@ function validateDynamicParams(route: Route, params: Record<string, string>) {
 
 async function resolveDynamicRoute(
   route: Route,
-  mod: PageModule,
-  resolved: ResolvedRoute[]
-) {
+  mod: PageModule
+): Promise<ResolvedRoute[]> {
   if (!mod.getStaticPaths) {
     throw new Error(
       `Dynamic route ${route.urlPattern} must export getStaticPaths()`
@@ -114,38 +118,38 @@ async function resolveDynamicRoute(
   }
 
   const paths = await mod.getStaticPaths();
-  for (const { params, props } of paths) {
+  return paths.map(({ params, props }) => {
     validateDynamicParams(route, params);
-    const outputPath = routeToOutputPath(route.urlPattern, params);
-    resolved.push({
-      route,
+    return {
+      outputPath: routeToOutputPath(route.urlPattern, params),
       params,
       props: props ?? {},
-      outputPath,
-    });
-  }
+      route,
+    };
+  });
 }
 
 export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
-  const resolved: ResolvedRoute[] = [];
+  const perRoute = await Promise.all(
+    routes.map(async (route): Promise<ResolvedRoute[]> => {
+      const mod = await loadModule<PageModule>(route.filePath);
 
-  for (const route of routes) {
-    const mod = await loadModule<PageModule>(route.filePath);
+      if (route.isDynamic) {
+        return resolveDynamicRoute(route, mod);
+      }
 
-    if (route.isDynamic) {
-      await resolveDynamicRoute(route, mod, resolved);
-    } else {
-      const outputPath = routeToOutputPath(route.urlPattern);
-      resolved.push({
-        route,
-        params: {},
-        props: {},
-        outputPath,
-      });
-    }
-  }
+      return [
+        {
+          outputPath: routeToOutputPath(route.urlPattern),
+          params: {},
+          props: {},
+          route,
+        },
+      ];
+    })
+  );
 
-  return resolved;
+  return perRoute.flat();
 }
 
 export function routeToOutputPath(

@@ -46,7 +46,7 @@ function parseArgs(input: string[]): ParsedArgs {
   let name: string | undefined;
   let target: string | undefined;
 
-  for (let index = 0; index < input.length; index++) {
+  for (let index = 0; index < input.length; index += 1) {
     const arg = input[index];
 
     if (HELP_FLAGS.has(arg)) {
@@ -56,19 +56,19 @@ function parseArgs(input: string[]): ParsedArgs {
 
     if (arg === "--root") {
       root = readOptionValue(input, index, "--root");
-      index++;
+      index += 1;
       continue;
     }
 
     if (arg === "--port") {
       port = parsePort(readOptionValue(input, index, "--port"));
-      index++;
+      index += 1;
       continue;
     }
 
     if (arg === "--name") {
       name = readOptionValue(input, index, "--name");
-      index++;
+      index += 1;
       continue;
     }
 
@@ -92,7 +92,7 @@ function parseArgs(input: string[]): ParsedArgs {
     command = arg;
   }
 
-  return { command, root, port, help, force, name, target };
+  return { command, force, help, name, port, root, target };
 }
 
 async function main() {
@@ -105,9 +105,9 @@ async function main() {
 
   if (parsed.command === "init") {
     await init({
-      targetDir: parsed.target ?? parsed.root,
-      name: parsed.name,
       force: parsed.force,
+      name: parsed.name,
+      targetDir: parsed.target ?? parsed.root,
     });
     return;
   }

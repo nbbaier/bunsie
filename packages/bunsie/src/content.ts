@@ -2,6 +2,8 @@ import { join } from "node:path";
 import { Glob } from "bun";
 import type { ContentEntry } from "./types";
 
+// Mirrored to process.env so pages importing a separate copy of the package can
+// read it; see the comment on ROUTES_ENV_KEY in router.ts.
 const CONTENT_DIR_ENV_KEY = "BUNSIE_CONTENT_DIR";
 let activeContentDir: string | undefined;
 
@@ -63,18 +65,20 @@ function splitFrontmatter(
     return { frontmatter: {}, markdown: text };
   }
 
-  const yamlBlock = match[1];
+  const [frontmatterBlock, yamlBlock] = match;
   let parsed: unknown;
   try {
     parsed = Bun.YAML.parse(yamlBlock);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid YAML frontmatter in ${filePath}: ${message}`);
+    throw new Error(`Invalid YAML frontmatter in ${filePath}: ${message}`, {
+      cause: error,
+    });
   }
 
   return {
     frontmatter: normalizeFrontmatter(parsed, filePath),
-    markdown: text.slice(match[0].length),
+    markdown: text.slice(frontmatterBlock.length),
   };
 }
 
@@ -102,7 +106,7 @@ export async function getCollection(
     const slug = file.replace(MD_EXTENSION_REGEX, "");
     const filePath = join(collectionDir, file);
     const { frontmatter, html } = await parseMarkdown(filePath);
-    entries.push({ slug, frontmatter, html });
+    entries.push({ frontmatter, html, slug });
   }
 
   entries.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -117,5 +121,5 @@ export async function getEntry(
   const dir = resolveContentDir(contentDir);
   const filePath = join(dir, name, `${slug}.md`);
   const { frontmatter, html } = await parseMarkdown(filePath);
-  return { slug, frontmatter, html };
+  return { frontmatter, html, slug };
 }
