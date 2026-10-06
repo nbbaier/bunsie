@@ -1,6 +1,6 @@
 # Architecture
 
-How `packages/bunsie/src` fits together. For user-facing behavior, see [`cli.md`](cli.md). For domain terms (page, route, route pattern, static path), see [`GLOSSARY.md`](../GLOSSARY.md).
+How `packages/bunsie/src` fits together. For user-facing behavior, see [`cli.md`](cli.md). For domain terms (page, route, path, static path), see [`GLOSSARY.md`](../GLOSSARY.md).
 
 ## Module map
 
