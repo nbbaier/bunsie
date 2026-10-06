@@ -16,6 +16,7 @@
     "check": "ultracite check",
     "fix": "ultracite fix",
     "typecheck": "tsgo --noEmit",
+    "test": "bun test",
     "build:cli": "bun run --filter=bunsie build",
     "clean:cli": "bun run --filter=bunsie clean",
     "build:example": "bun run --filter=example build"
