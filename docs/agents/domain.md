@@ -2,24 +2,10 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-## Before exploring, read these
+## Read first
 
-- **`GLOSSARY.md`** at the repo root, or
-- **`GLOSSARY-MAP.md`** at the repo root if it exists: it points at one `GLOSSARY.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`**: read ADRs that touch the area you're about to work in.
-
-If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
-
-## File structure
-
-Single-context layout (this repo):
-
-```
-/
-├── GLOSSARY.md
-├── docs/adr/
-└── packages/bunsie/src/
-```
+- **`GLOSSARY.md`** at the repo root. Single-context repo: one glossary, no `GLOSSARY-MAP.md`.
+- **`docs/adr/`**: the ADRs that touch the area you're about to work in.
 
 ## Use the glossary's vocabulary
 
