@@ -5,18 +5,18 @@ import { build } from "./build";
 import type { ResolvedConfig } from "./types";
 
 const MIME_TYPES: Record<string, string> = {
-  ".html": "text/html",
   ".css": "text/css",
+  ".gif": "image/gif",
+  ".html": "text/html",
+  ".ico": "image/x-icon",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
   ".js": "application/javascript",
   ".json": "application/json",
   ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".webp": "image/webp",
   ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
   ".txt": "text/plain",
+  ".webp": "image/webp",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 };
@@ -144,7 +144,6 @@ export async function dev(config: ResolvedConfig, port = 3000) {
   const clients = new Set<ServerWebSocket<unknown>>();
 
   const server = Bun.serve({
-    port,
     fetch(req, server) {
       const url = new URL(req.url);
 
@@ -164,15 +163,16 @@ export async function dev(config: ResolvedConfig, port = 3000) {
 
       return serveFile(filePath);
     },
+    port,
     websocket: {
-      open(ws) {
-        clients.add(ws);
+      close(ws) {
+        clients.delete(ws);
       },
       message() {
         // Dev websocket only pushes server -> client reload events.
       },
-      close(ws) {
-        clients.delete(ws);
+      open(ws) {
+        clients.add(ws);
       },
     },
   });

@@ -104,7 +104,7 @@ export async function getCollection(
     const slug = file.replace(MD_EXTENSION_REGEX, "");
     const filePath = join(collectionDir, file);
     const { frontmatter, html } = await parseMarkdown(filePath);
-    entries.push({ slug, frontmatter, html });
+    entries.push({ frontmatter, html, slug });
   }
 
   entries.sort((a, b) => a.slug.localeCompare(b.slug));
@@ -119,5 +119,5 @@ export async function getEntry(
   const dir = resolveContentDir(contentDir);
   const filePath = join(dir, name, `${slug}.md`);
   const { frontmatter, html } = await parseMarkdown(filePath);
-  return { slug, frontmatter, html };
+  return { frontmatter, html, slug };
 }

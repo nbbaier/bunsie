@@ -19,11 +19,11 @@ function packageJson(name: string): string {
     {
       name,
       private: true,
-      type: "module",
       scripts: {
         build: "bunsie build",
         dev: "bunsie dev",
       },
+      type: "module",
     },
     null,
     2
@@ -322,17 +322,17 @@ ul {
 
 function getScaffoldFiles(name: string): ScaffoldFile[] {
   return [
-    { path: "package.json", content: packageJson(name) },
-    { path: "tsconfig.json", content: tsconfigJson() },
-    { path: "ssg.config.ts", content: ssgConfig() },
-    { path: ".gitignore", content: gitignore() },
-    { path: "layouts/default.tsx", content: defaultLayout(name) },
-    { path: "pages/index.tsx", content: indexPage() },
-    { path: "pages/about.tsx", content: aboutPage() },
-    { path: "pages/blog/index.tsx", content: blogIndexPage() },
-    { path: "pages/blog/[slug].tsx", content: blogSlugPage() },
-    { path: "content/blog/hello.md", content: helloPost() },
-    { path: "public/style.css", content: styleCss() },
+    { content: packageJson(name), path: "package.json" },
+    { content: tsconfigJson(), path: "tsconfig.json" },
+    { content: ssgConfig(), path: "ssg.config.ts" },
+    { content: gitignore(), path: ".gitignore" },
+    { content: defaultLayout(name), path: "layouts/default.tsx" },
+    { content: indexPage(), path: "pages/index.tsx" },
+    { content: aboutPage(), path: "pages/about.tsx" },
+    { content: blogIndexPage(), path: "pages/blog/index.tsx" },
+    { content: blogSlugPage(), path: "pages/blog/[slug].tsx" },
+    { content: helloPost(), path: "content/blog/hello.md" },
+    { content: styleCss(), path: "public/style.css" },
   ];
 }
 
@@ -410,8 +410,8 @@ export async function init(options: InitOptions): Promise<void> {
 
   const install = Bun.spawn(["bun", "add", "bunsie", "@kitajs/html"], {
     cwd: targetDir,
-    stdout: "inherit",
     stderr: "inherit",
+    stdout: "inherit",
   });
 
   const exitCode = await install.exited;

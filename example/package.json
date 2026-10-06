@@ -8,7 +8,7 @@
     "dev": "bun run --cwd ../packages/bunsie build && bunsie dev"
   },
   "dependencies": {
-    "bunsie": "workspace:*",
-    "@kitajs/html": "^4.2.13"
+    "@kitajs/html": "^4.2.13",
+    "bunsie": "workspace:*"
   }
 }

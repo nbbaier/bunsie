@@ -21,9 +21,9 @@ function toRouteInfo(resolved: ResolvedRoute[]): RouteInfo[] {
       | Record<string, unknown>
       | undefined;
     return {
-      url: interpolateRoutePattern(r.route.urlPattern, r.params),
-      params: r.params,
       frontmatter,
+      params: r.params,
+      url: interpolateRoutePattern(r.route.urlPattern, r.params),
     };
   });
 }
@@ -65,9 +65,9 @@ export async function scanRoutes(pagesDir: string): Promise<Route[]> {
     const paramNames = extractParamNames(urlPattern);
     routes.push({
       filePath: join(pagesDir, file),
-      urlPattern,
       isDynamic: paramNames.length > 0,
       paramNames,
+      urlPattern,
     });
   }
 
@@ -123,10 +123,10 @@ async function resolveDynamicRoute(
     validateDynamicParams(route, params);
     const outputPath = routeToOutputPath(route.urlPattern, params);
     resolved.push({
-      route,
+      outputPath,
       params,
       props: props ?? {},
-      outputPath,
+      route,
     });
   }
 }
@@ -142,10 +142,10 @@ export async function resolveRoutes(routes: Route[]): Promise<ResolvedRoute[]> {
     } else {
       const outputPath = routeToOutputPath(route.urlPattern);
       resolved.push({
-        route,
+        outputPath,
         params: {},
         props: {},
-        outputPath,
+        route,
       });
     }
   }

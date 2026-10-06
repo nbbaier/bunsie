@@ -9,7 +9,7 @@ export async function build(config: ResolvedConfig) {
   const start = performance.now();
 
   // Clean dist
-  await rm(config.outDir, { recursive: true, force: true });
+  await rm(config.outDir, { force: true, recursive: true });
   await mkdir(config.outDir, { recursive: true });
 
   // Copy public/ → dist/

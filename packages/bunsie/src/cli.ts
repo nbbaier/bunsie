@@ -92,7 +92,7 @@ function parseArgs(input: string[]): ParsedArgs {
     command = arg;
   }
 
-  return { command, root, port, help, force, name, target };
+  return { command, force, help, name, port, root, target };
 }
 
 async function main() {
@@ -105,9 +105,9 @@ async function main() {
 
   if (parsed.command === "init") {
     await init({
-      targetDir: parsed.target ?? parsed.root,
-      name: parsed.name,
       force: parsed.force,
+      name: parsed.name,
+      targetDir: parsed.target ?? parsed.root,
     });
     return;
   }

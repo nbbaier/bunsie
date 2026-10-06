@@ -2,11 +2,11 @@ import { join, resolve } from "node:path";
 import type { ResolvedConfig, SsgConfig } from "./types";
 
 const defaults: Omit<SsgConfig, "root"> = {
-  pagesDir: "pages",
   contentDir: "content",
   layoutsDir: "layouts",
-  publicDir: "public",
   outDir: "dist",
+  pagesDir: "pages",
+  publicDir: "public",
 };
 
 export async function loadConfig(root: string): Promise<ResolvedConfig> {
@@ -26,11 +26,11 @@ export async function loadConfig(root: string): Promise<ResolvedConfig> {
 
 function resolvePaths(config: SsgConfig): ResolvedConfig {
   return {
-    root: config.root,
-    pagesDir: resolve(config.root, config.pagesDir),
     contentDir: resolve(config.root, config.contentDir),
     layoutsDir: resolve(config.root, config.layoutsDir),
-    publicDir: resolve(config.root, config.publicDir),
     outDir: resolve(config.root, config.outDir),
+    pagesDir: resolve(config.root, config.pagesDir),
+    publicDir: resolve(config.root, config.publicDir),
+    root: config.root,
   };
 }
