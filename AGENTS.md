@@ -110,4 +110,4 @@ Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context layout — one `CONTEXT.md` and `docs/adr/` at the repo root (not yet created). See `docs/agents/domain.md`.
+Single-context layout — one `GLOSSARY.md` and `docs/adr/` at the repo root (not yet created). See `docs/agents/domain.md`.
